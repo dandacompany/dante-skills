@@ -19,7 +19,6 @@ skills add dandacompany/dante-skills -g -y --copy -a claude-code
 | 스킬 | 설명 | 설치 |
 |------|------|------|
 | [dream](./dream/) | 프로젝트 메모리 정리 및 최적화. 메모리 파일 중복·충돌·오래된 항목을 정리하고 인덱스를 재구성합니다. | `skills add dandacompany/dante-skills@dream` |
-| [paperclip-gpt55-patch](./paperclip-gpt55-patch/) | Paperclip의 codex_local 어댑터에 GPT-5.5 모델을 핫패치합니다. npx 캐시의 adapter + UI bundle을 직접 수정. | `skills add dandacompany/dante-skills@paperclip-gpt55-patch` |
 
 ## 스킬 상세
 
@@ -37,24 +36,16 @@ skills add dandacompany/dante-skills -g -y --copy -a claude-code
 skills add dandacompany/dante-skills@dream -g -y --copy -a claude-code
 ```
 
-### 📎 paperclip-gpt55-patch
+---
 
-`paperclipai/paperclip`의 `codex_local` 어댑터가 GPT-5.5 모델을 dropdown에 노출하지 않는 문제를 npx 캐시 레벨에서 직접 패치합니다. upstream에는 동일한 패치 PR이 7개 누적되어 있지만 머지가 진행되지 않아 자체 패치가 필요합니다.
+## 별도 배포 도구
 
-**사용 시점:**
-- Paperclip 운영 중인데 codex_local 모델 선택에 `gpt-5.5`가 안 보일 때
-- Fast mode를 활성화했는데 `service_tier="fast"`가 적용되지 않을 때
-- 새 codex_local 에이전트 default를 `gpt-5.5`로 고정하고 싶을 때
+스킬 형태가 아닌 1줄 curl 한 방으로 적용하는 운영 패치는 별도 repo로 분리되어 있습니다:
 
-**주요 기능:**
-- adapter `index.js` + UI minified bundle 동시 패치
-- 자동 백업(`~/.paperclip-patches/<timestamp>/`) + `--dry-run` 사전 확인
-- ESM import로 패치 결과 자동 검증, `revert.sh`로 1초 롤백
-- systemd 서비스 자동 재시작 (선택)
-
-```bash
-skills add dandacompany/dante-skills@paperclip-gpt55-patch -g -y --copy -a claude-code
-```
+- **[paperclip-hotpatch](https://github.com/dandacompany/paperclip-hotpatch)** — paperclipai/paperclip의 codex_local 어댑터에 GPT-5.5를 추가하는 1줄 hotpatch.
+  ```bash
+  curl -fsSL https://raw.githubusercontent.com/dandacompany/paperclip-hotpatch/main/patch.sh | bash
+  ```
 
 ---
 
