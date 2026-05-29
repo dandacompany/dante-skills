@@ -23,6 +23,7 @@ skills add dandacompany/dante-skills -g -y --copy -a claude-code
 | [swot-from-signals](./swot-from-signals/) | 정성·정량 신호로부터 SWOT 4사분면을 자동 도출하는 분석 패턴. 각 칸 3개씩 근거 URL/시그널값 명시. 데이터 분석가 전용. | `skills add dandacompany/dante-skills@swot-from-signals` |
 | [marp-slide-build](./marp-slide-build/) | Marp 마크다운으로 임원 보고용 시장조사 슬라이드 12~15장 빌드. 단테랩스 paper+ink+rust 디자인 가드 강제. 슬라이드 제작자 전용. | `skills add dandacompany/dante-skills@marp-slide-build` |
 | [report-evidence-citation](./report-evidence-citation/) | 모든 산출물에서 사실/의견 분리 + 출처 URL 보존 + 평가성 어휘 차단. 회사 공통 게이트. | `skills add dandacompany/dante-skills@report-evidence-citation` |
+| [oh-my-wiki](./oh-my-wiki/) | Karpathy 스타일 LLM 위키 스킬(omw) 설치 안내. 소스 ingest → 구조화 위키 → 인용 달린 query. 멀티 볼트·autoresearch·팩트체크·스웜 포함. 실제 설치는 플러그인 마켓플레이스. | `/plugin install oh-my-wiki@oh-my-wiki-marketplace` |
 
 ## Paperclip 회사 레벨 등록 (GitHub URL 한 줄)
 
@@ -61,6 +62,17 @@ YouTube #23 영상 "Paperclip × Bright Data 멀티에이전트 브랜드 시장
 - `swot-from-signals` (데이터 분석가) — SWOT 자동 도출
 - `marp-slide-build` (슬라이드 제작자) — 임원 보고용 슬라이드 빌드 + 디자인 가드
 - `report-evidence-citation` (회사 공통) — 사실/의견 분리 + 인용 보존
+
+### 📚 oh-my-wiki
+
+Karpathy "LLM Wiki" 워크플로의 Claude Code 구현. 이 repo 의 항목은 **설치 안내용 포인터**이고, 실제 스킬·훅·커맨드는 별도 플러그인 마켓플레이스로 배포된다.
+
+```
+/plugin marketplace add dandacompany/oh-my-wiki
+/plugin install oh-my-wiki@oh-my-wiki-marketplace
+```
+
+소스 ingest → 구조화 위키 → 인용 달린 query. 멀티 볼트(sqlite) · autoresearch · 팩트체크/일관성/용어집 · 스웜 병렬 디스패치 포함. 전체 문서: **[github.com/dandacompany/oh-my-wiki](https://github.com/dandacompany/oh-my-wiki)**
 
 ---
 
