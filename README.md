@@ -21,6 +21,7 @@ skills add dandacompany/dante-skills -g -y --copy -a claude-code
 | [dream](./dream/) | 프로젝트 메모리 정리 및 최적화. 메모리 파일 중복·충돌·오래된 항목을 정리하고 인덱스를 재구성합니다. | `skills add dandacompany/dante-skills@dream` |
 | [brand-research-glossary](./brand-research-glossary/) | B2C 브랜드 시장조사 표기·용어 사전 (무신사·29CM 등 한국 e-커머스, Bright Data 제품명, 슬라이드 형식, 금지 표현). Brand Intelligence Lab 회사 공통. | `skills add dandacompany/dante-skills@brand-research-glossary` |
 | [swot-from-signals](./swot-from-signals/) | 정성·정량 신호로부터 SWOT 4사분면을 자동 도출하는 분석 패턴. 각 칸 3개씩 근거 URL/시그널값 명시. 데이터 분석가 전용. | `skills add dandacompany/dante-skills@swot-from-signals` |
+| [price-positioning](./price-positioning/) | 수집된 가격 관측치로 시장 가격 포지셔닝 맵과 빈 가격대(화이트스페이스)를 결정론적으로 도출. 수집 도구 비종속(어떤 시장·통화도) + stdlib 결정론 분석기 동봉. 데이터 분석가용. | `skills add dandacompany/dante-skills@price-positioning` |
 | [marp-slide-build](./marp-slide-build/) | Marp 마크다운으로 임원 보고용 시장조사 슬라이드 12~15장 빌드. 단테랩스 paper+ink+rust 디자인 가드 강제. 슬라이드 제작자 전용. | `skills add dandacompany/dante-skills@marp-slide-build` |
 | [report-evidence-citation](./report-evidence-citation/) | 모든 산출물에서 사실/의견 분리 + 출처 URL 보존 + 평가성 어휘 차단. 회사 공통 게이트. | `skills add dandacompany/dante-skills@report-evidence-citation` |
 | [brightdata-guide](./brightdata-guide/) | Bright Data MCP 사용 가이드 스킬. 웹 검색·스크랩·구조화 추출·브라우저 자동화 도구 선택과 모드(Rapid/Pro·groups) 안내. 헤르메스·Codex 등 범용 에이전트용(Claude 종속 제거·보안 패치: 설정파일 자동편집 지시 제거·npx 사용). | `skills add dandacompany/dante-skills@brightdata-guide` |
@@ -33,6 +34,7 @@ Paperclip 콘솔 → **Company → Skills Library → `+ Add Skill`** 폼에 아
 ```
 https://github.com/dandacompany/dante-skills/tree/main/brand-research-glossary
 https://github.com/dandacompany/dante-skills/tree/main/swot-from-signals
+https://github.com/dandacompany/dante-skills/tree/main/price-positioning
 https://github.com/dandacompany/dante-skills/tree/main/marp-slide-build
 https://github.com/dandacompany/dante-skills/tree/main/report-evidence-citation
 ```
@@ -63,6 +65,18 @@ YouTube #23 영상 "Paperclip × Bright Data 멀티에이전트 브랜드 시장
 - `swot-from-signals` (데이터 분석가) — SWOT 자동 도출
 - `marp-slide-build` (슬라이드 제작자) — 임원 보고용 슬라이드 빌드 + 디자인 가드
 - `report-evidence-citation` (회사 공통) — 사실/의견 분리 + 인용 보존
+
+### 📈 price-positioning
+
+수집된 가격 관측치(브랜드·품목·가격·출처)로부터 **가격 포지셔닝 맵**과 **빈 가격대(화이트스페이스)** 를 결정론적으로 도출하는 분석 패턴. `swot-from-signals`와 같은 "수집물 → 분석" 계열이라 **수집 도구에 종속되지 않는다** — 웹 수집 MCP·검색 API·사내 시트·수기 입력 무엇으로 모았든 동일하게 동작하고, 어떤 시장·통화에도 쓸 수 있다.
+
+- 입력: 정규화 관측치(CSV/JSON). 여러 일꾼에게 가격대를 나눠 맡길 때 쓸 "수집 계약" 문구 포함.
+- 처리: stdlib 전용 결정론 분석기(`scripts/positioning.py`) — 밴드별 통계·화이트스페이스·이상치·플래그. 같은 입력이면 항상 같은 출력. 네트워크·환경변수·외부 실행 없음.
+- 출력: `positioning.json`(고정 스키마) + `pricing-landscape.md`(고정 섹션). 진입 가격대 권고는 분석가가 근거·확신도와 함께 덧붙임.
+
+```bash
+skills add dandacompany/dante-skills@price-positioning -g -y --copy -a claude-code
+```
 
 ### 📚 oh-my-wiki
 
