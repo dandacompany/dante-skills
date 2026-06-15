@@ -24,7 +24,7 @@ skills add dandacompany/dante-skills -g -y --copy -a claude-code
 | [price-positioning](./price-positioning/) | 수집된 가격 관측치로 시장 가격 포지셔닝 맵과 빈 가격대(화이트스페이스)를 결정론적으로 도출. 수집 도구 비종속(어떤 시장·통화도) + stdlib 결정론 분석기 동봉. 데이터 분석가용. | `skills add dandacompany/dante-skills@price-positioning` |
 | [marp-slide-build](./marp-slide-build/) | Marp 마크다운으로 임원 보고용 시장조사 슬라이드 12~15장 빌드. 단테랩스 paper+ink+rust 디자인 가드 강제. 슬라이드 제작자 전용. | `skills add dandacompany/dante-skills@marp-slide-build` |
 | [report-evidence-citation](./report-evidence-citation/) | 모든 산출물에서 사실/의견 분리 + 출처 URL 보존 + 평가성 어휘 차단. 회사 공통 게이트. | `skills add dandacompany/dante-skills@report-evidence-citation` |
-| [brightdata-guide](./brightdata-guide/) | Bright Data MCP 사용 가이드 스킬. 웹 검색·스크랩·구조화 추출·브라우저 자동화 도구 선택과 모드(Rapid/Pro·groups) 안내. 헤르메스·Codex 등 범용 에이전트용(Claude 종속 제거·보안 패치: 설정파일 자동편집 지시 제거·npx 사용). | `skills add dandacompany/dante-skills@brightdata-guide` |
+| [brightdata-guide](./brightdata-guide/) | Bright Data 웹 수집 가이드(MCP **+ CLI** 통합). MCP 도구가 있으면 MCP를, 없으면(예: delegate 서브에이전트 — MCP 미상속, 터미널·스킬은 상속) 터미널의 `bdata`/`brightdata` CLI로 검색·스크랩·구조화 추출. 헤르메스·Codex 등 범용. 보안 패치(설정 자동편집·curl-to-bash·전역설치 제거). | `skills add dandacompany/dante-skills@brightdata-guide` |
 | [oh-my-wiki](./oh-my-wiki/) | Karpathy 스타일 LLM 위키 스킬(omw) 설치 안내. 소스 ingest → 구조화 위키 → 인용 달린 query. 멀티 볼트·autoresearch·팩트체크·스웜 포함. 실제 설치는 플러그인 마켓플레이스. | `/plugin install oh-my-wiki@oh-my-wiki-marketplace` |
 
 ## Paperclip 회사 레벨 등록 (GitHub URL 한 줄)
