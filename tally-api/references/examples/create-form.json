@@ -1,0 +1,40 @@
+{
+  "status": "PUBLISHED",
+  "workspaceId": "550e8400-e29b-41d4-a716-446655440000",
+  "blocks": [
+    {
+      "uuid": "123e4567-e89b-12d3-a456-426614174000",
+      "type": "FORM_TITLE",
+      "groupUuid": "123e4567-e89b-12d3-a456-426614174000",
+      "groupType": "FORM_TITLE",
+      "payload": { "html": "<h1>Customer Feedback Survey</h1>", "mentions": [] }
+    },
+    {
+      "uuid": "223e4567-e89b-12d3-a456-426614174001",
+      "type": "INPUT_TEXT",
+      "groupUuid": "223e4567-e89b-12d3-a456-426614174001",
+      "groupType": "QUESTION",
+      "payload": {
+        "isRequired": true,
+        "placeholder": "Enter your name",
+        "name": "respondent_name"
+      }
+    },
+    {
+      "uuid": "323e4567-e89b-12d3-a456-426614174002",
+      "type": "LINEAR_SCALE",
+      "groupUuid": "323e4567-e89b-12d3-a456-426614174002",
+      "groupType": "QUESTION",
+      "payload": {
+        "isRequired": true,
+        "start": 1,
+        "end": 5,
+        "hasLeftLabel": true,
+        "leftLabel": "Poor",
+        "hasRightLabel": true,
+        "rightLabel": "Excellent",
+        "name": "satisfaction_rating"
+      }
+    }
+  ]
+}
