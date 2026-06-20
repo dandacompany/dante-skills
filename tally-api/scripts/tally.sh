@@ -16,10 +16,14 @@
 #   tally.sh questions <formId>
 #   tally.sh submissions <formId> [filter] [limit]      # filter: all|completed|partial
 #   tally.sh submission <formId> <submissionId>
+#   tally.sh submission-delete <formId> <submissionId>
 #   tally.sh metrics <formId>
+#   tally.sh analytics <formId> <visits|submissions|dimensions|drop-off>
 #   tally.sh webhooks [page]
 #   tally.sh webhook-create <formId> <url> [signingSecret]
 #   tally.sh webhook-delete <webhookId>
+#   tally.sh webhook-events <webhookId> [page]
+#   tally.sh webhook-retry <webhookId> <eventId>        # POST .../events/{eventId} (no /retry suffix)
 #   tally.sh workspaces
 #   tally.sh raw <METHOD> <path> [json-body]            # escape hatch, e.g. raw GET /users/me
 #
@@ -65,8 +69,12 @@ main() {
     questions)     req GET "/forms/$1/questions" | pp ;;
     submissions)   req GET "/forms/$1/submissions?filter=${2:-all}&limit=${3:-50}" | pp ;;
     submission)    req GET "/forms/$1/submissions/$2" | pp ;;
+    submission-delete) req DELETE "/forms/$1/submissions/$2" | pp ;;
     metrics)       req GET "/forms/$1/analytics/metrics" | pp ;;
+    analytics)     req GET "/forms/$1/analytics/$2" | pp ;;   # visits|submissions|dimensions|drop-off
     webhooks)      req GET "/webhooks?page=${1:-1}" | pp ;;
+    webhook-events) req GET "/webhooks/$1/events?page=${2:-1}" | pp ;;
+    webhook-retry)  req POST "/webhooks/$1/events/$2" | pp ;;
     webhook-create)
       local fid="$1" url="$2" secret="${3:-}"
       local body

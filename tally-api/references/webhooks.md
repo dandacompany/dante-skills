@@ -8,8 +8,8 @@ Official help: <https://tally.so/help/webhooks>
 ## Setup paths
 
 1. **API:** `POST /webhooks` with `{ formId, url, eventTypes:["FORM_RESPONSE"], signingSecret? }`
-   (see `references/api-reference.md`). Manage events via `/webhooks/{id}/events` and retry with
-   `/webhooks/{id}/events/{eventId}/retry`.
+   (see `references/api-reference.md`). Manage events via `GET /webhooks/{id}/events` and retry a
+   failed delivery with `POST /webhooks/{id}/events/{eventId}` (no `/retry` suffix).
 2. **UI:** form → **Integrations → Webhooks** → add endpoint URL + optional signing secret.
 
 ## Payload (`FORM_RESPONSE`)
@@ -104,5 +104,5 @@ def verify(raw_body: bytes, header: str, secret: str) -> bool:
 ## Delivery & retries
 
 - Tally auto-retries failed deliveries; inspect history via `GET /webhooks/{id}/events` and force a
-  resend with `POST /webhooks/{id}/events/{eventId}/retry`.
+  resend with `POST /webhooks/{id}/events/{eventId}` (no `/retry` suffix).
 - Make handlers **idempotent** — key on `eventId` (or `submissionId`) to dedupe retried events.

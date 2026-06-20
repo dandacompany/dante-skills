@@ -62,11 +62,21 @@ Common block types: `FORM_TITLE`, `INPUT_TEXT`, `TEXTAREA`, `INPUT_EMAIL`, `INPU
 | GET    | `/forms/{id}/analytics/dimensions`  | Breakdown by source, browser, OS, device, location.   |
 | GET    | `/forms/{id}/analytics/drop-off`    | Per-question drop-off stats.                          |
 
-### Questions
+### Questions & blocks
 
-| Method | Path                    | Purpose                  |
-| ------ | ----------------------- | ------------------------ |
-| GET    | `/forms/{id}/questions` | All questions in a form. |
+| Method | Path                                 | Purpose                                                    |
+| ------ | ------------------------------------ | ---------------------------------------------------------- |
+| GET    | `/forms/{id}/questions`              | All questions in a form.                                   |
+| PATCH  | `/forms/{id}/questions/{questionId}` | Update a single question.                                  |
+| GET    | `/forms/{id}/blocks`                 | The form's raw blocks (lower level than `/questions`).     |
+| PATCH  | `/forms/{id}/blocks`                 | Replace/update the form's blocks (full block-array edits). |
+
+Block types and their `payload` shapes are documented per-block at
+`https://developers.tally.so/blocks-reference/<block>.md` (40+ blocks: input-text, textarea,
+multiple-choice-option, checkbox, dropdown-option, linear-scale, rating, matrix, file-upload, payment,
+signature, hidden-fields, conditional-logic, calculated-fields, page-break, etc.). Step-by-step form
+build guides live under `https://developers.tally.so/documentation/` (creating-a-form,
+adding-blocks-to-a-form, creating-a-form-with-settings, creating-a-dropdown, creating-a-mention).
 
 ### Submissions
 
@@ -133,14 +143,14 @@ Common block types: `FORM_TITLE`, `INPUT_TEXT`, `TEXTAREA`, `INPUT_EMAIL`, `INPU
 
 ### Webhooks
 
-| Method | Path                                    | Purpose                                           |
-| ------ | --------------------------------------- | ------------------------------------------------- |
-| POST   | `/webhooks`                             | Create a webhook for a form.                      |
-| GET    | `/webhooks`                             | List webhooks across accessible forms/workspaces. |
-| PATCH  | `/webhooks/{id}`                        | Update a webhook.                                 |
-| DELETE | `/webhooks/{id}`                        | Delete a webhook.                                 |
-| GET    | `/webhooks/{id}/events`                 | Paginated delivery events for a webhook.          |
-| POST   | `/webhooks/{id}/events/{eventId}/retry` | Retry a failed delivery.                          |
+| Method | Path                              | Purpose                                                 |
+| ------ | --------------------------------- | ------------------------------------------------------- |
+| POST   | `/webhooks`                       | Create a webhook for a form.                            |
+| GET    | `/webhooks`                       | List webhooks across accessible forms/workspaces.       |
+| PATCH  | `/webhooks/{id}`                  | Update a webhook.                                       |
+| DELETE | `/webhooks/{id}`                  | Delete a webhook.                                       |
+| GET    | `/webhooks/{id}/events`           | Paginated delivery events for a webhook.                |
+| POST   | `/webhooks/{id}/events/{eventId}` | Retry a failed delivery (note: **no** `/retry` suffix). |
 
 **Create body:** `{ "formId", "url", "eventTypes": ["FORM_RESPONSE"], "signingSecret"?, "httpHeaders"?: [{"name","value"}], "externalSubscriber"? }`.
 Required: `formId`, `url`, `eventTypes`. Only event type today: `FORM_RESPONSE`.
@@ -158,13 +168,16 @@ Payload + signature verification: `references/webhooks.md`.
 
 ### Organizations
 
-| Method | Path                          | Purpose                              |
-| ------ | ----------------------------- | ------------------------------------ |
-| GET    | `/organizations/users`        | List org users.                      |
-| DELETE | `/organizations/users/{id}`   | Remove a user from the org.          |
-| POST   | `/organizations/invites`      | Invite users to specific workspaces. |
-| GET    | `/organizations/invites`      | List invites.                        |
-| DELETE | `/organizations/invites/{id}` | Cancel a pending invite.             |
+All organization paths require the `{organizationId}` path segment (the llms.txt summary omits it, but
+the OpenAPI spec requires it). Obtain the organization ID from `GET /users/me` / `GET /workspaces`.
+
+| Method | Path                                                 | Purpose                              |
+| ------ | ---------------------------------------------------- | ------------------------------------ |
+| GET    | `/organizations/{organizationId}/users`              | List org users.                      |
+| DELETE | `/organizations/{organizationId}/users/{userId}`     | Remove a user from the org.          |
+| POST   | `/organizations/{organizationId}/invites`            | Invite users to specific workspaces. |
+| GET    | `/organizations/{organizationId}/invites`            | List invites.                        |
+| DELETE | `/organizations/{organizationId}/invites/{inviteId}` | Cancel a pending invite.             |
 
 ## curl examples
 

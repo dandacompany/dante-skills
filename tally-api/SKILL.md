@@ -38,6 +38,10 @@ webhooks. For ongoing submission processing, prefer **webhooks over polling** (t
   HMAC-SHA256 verification.
 - `references/examples/create-form.json` — a working `POST /forms` body with block structure.
 
+**Official MCP server:** Tally also ships a hosted MCP server (`https://developers.tally.so/api-reference/mcp.md`).
+If the user's agent already has the Tally MCP connected, prefer those tools for interactive work; use
+this skill's REST/CLI path for scripting, batch sync, webhook setup, and signature verification.
+
 **CLI wrapper** — `scripts/tally.sh` (curl + jq, key auto-loaded):
 
 ```bash
