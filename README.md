@@ -27,6 +27,7 @@ skills add dandacompany/dante-skills -g -y --copy -a claude-code
 | [brightdata-guide](./brightdata-guide/) | Bright Data 웹 수집 가이드(MCP **+ CLI** 통합). MCP 도구가 있으면 MCP를, 없으면(예: delegate 서브에이전트 — MCP 미상속, 터미널·스킬은 상속) 터미널의 `bdata`/`brightdata` CLI로 검색·스크랩·구조화 추출. 헤르메스·Codex 등 범용. 보안 패치(설정 자동편집·curl-to-bash·전역설치 제거). | `skills add dandacompany/dante-skills@brightdata-guide` |
 | [oh-my-wiki](./oh-my-wiki/) | Karpathy 스타일 LLM 위키 스킬(omw) 설치 안내. 소스 ingest → 구조화 위키 → 인용 달린 query. 멀티 볼트·autoresearch·팩트체크·스웜 포함. 실제 설치는 플러그인 마켓플레이스. | `/plugin install oh-my-wiki@oh-my-wiki-marketplace` |
 | [brand-logo](./brand-logo/) | 브랜드 로고 컨셉 디렉팅 패턴. 브리프 → 심볼 컨셉 → 이미지 프롬프트 → 생성 → 벡터화 인계의 로고 디렉터 워크플로. 모델 글자 약점 회피(추상·모노그램 우선), DESIGN.md 브랜드 토큰 고정, 강한 네거티브·평가 체크리스트. 디자이너용. | `skills add dandacompany/dante-skills@brand-logo` |
+| [magma-support](./magma-support/) | MAGMA 고객지원 1차 응대 지식(샘플). 고객 문의를 정책 기반으로 분류·1차 답변 초안 작성, 확실하지 않은 건 담당자 확인 필요로 표시. 웹훅 구독에서 로드해 외부 문의에 대응. 헤르메스 강의 4.1 웹훅 실습 사전 준비물. | `hermes skills install dandacompany/dante-skills/magma-support` |
 
 ## Paperclip 회사 레벨 등록 (GitHub URL 한 줄)
 
