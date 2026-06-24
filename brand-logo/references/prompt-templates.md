@@ -77,6 +77,7 @@ approachable, white background. Negative: no text, no 3D, no mockup, no gradient
 `~/.hermes/profiles/mia/DESIGN.md`: primary 딥틸 `#0F595E`, accent 테라코타 `#C05621`, bg 파치먼트 `#F4F1EA`, 로고타입 Noto Serif KR(넓은 자간), 60/30/10, 금지(네온·요란한 그라데이션·차가운 순백·과장).
 
 - **추상 심볼(권장)**: 마그마가 식어 굳은 지층 모티프.
+
 ```
 Minimal abstract brand symbol: a calm horizontal strata / layered earth motif evoking "magma"
 cooled into solid ground, geometric, deep teal (#0F595E) with one terracotta (#C05621) layer,
@@ -84,14 +85,18 @@ on warm parchment (#F4F1EA). Flat vector icon, centered, generous negative space
 restrained, Korean editorial mood for men in their 30s-40s. Negative: no gradient, no neon,
 no 3D, no photo, no letters, no shadow. — square 1:1
 ```
+
 - **모노그램 'M'**:
+
 ```
 Minimal geometric lettermark of capital "M" built from clean straight strokes suggesting a calm
 mountain/strata silhouette, deep teal (#0F595E), single terracotta (#C05621) accent edge, on
 parchment (#F4F1EA). Flat vector emblem, centered, lots of negative space, scalable. Negative:
 no gradient, no 3D, no neon, no photo, no text, no shadow. — square 1:1
 ```
+
 - **워드마크(탐색용, 확정은 벡터)**:
+
 ```
 Minimal editorial wordmark "MAGMA" in a refined serif with wide letter-spacing, deep teal
 (#0F595E) ink on warm parchment (#F4F1EA), one small terracotta (#C05621) accent mark. Flat

@@ -28,19 +28,24 @@ Group by type and sort active items first:
 
 ```markdown
 ## Project
+
 - [Auth System Status](project_auth.md) — JWT + RBAC complete, refresh tokens pending
 - [API Rate Limiting](project_ratelimit.md) — Redis-based, 100 req/min per key
 
 ## Feedback
+
 - [Test Strategy](feedback_testing.md) — integration tests must use real DB, not mocks
 
 ## User
+
 - [User Profile](user_profile.md) — senior Go engineer, new to React frontend
 
 ## Reference
+
 - [Issue Tracker](ref_linear.md) — bugs tracked in Linear project "BACKEND"
 
 ## Archive
+
 - [Old Auth Design](archive_auth_v1.md) — superseded by JWT migration in 2025-03
 ```
 
@@ -62,11 +67,11 @@ Body content here.
 
 ### Required Frontmatter Fields
 
-| Field | Purpose | Rules |
-|-------|---------|-------|
-| `name` | Human-readable identifier | Short, title-case |
+| Field         | Purpose                           | Rules                                     |
+| ------------- | --------------------------------- | ----------------------------------------- |
+| `name`        | Human-readable identifier         | Short, title-case                         |
 | `description` | Decides when the memory is loaded | One sentence, specific, no angle brackets |
-| `type` | Categorizes the memory | Must be one of the four types below |
+| `type`        | Categorizes the memory            | Must be one of the four types below       |
 
 ### Memory Types
 

@@ -12,20 +12,20 @@
 
 ## Global options
 
-| Flag | Description |
-|------|-------------|
+| Flag                  | Description                                                                                     |
+| --------------------- | ----------------------------------------------------------------------------------------------- |
 | `-k, --api-key <key>` | Override API key for one request (avoid in shared/subagent contexts; prefer saved login or env) |
-| `--timing` | Show request timing |
-| `-v, --version` | Show CLI version |
+| `--timing`            | Show request timing                                                                             |
+| `-v, --version`       | Show CLI version                                                                                |
 
 ## `bdata login` / `bdata logout`
 
 Authenticate (one-time, operator). Browser OAuth by default.
 
-| Flag | Description |
-|------|-------------|
-| `-d, --device` | Device flow for SSH/headless environments |
-| `-c, --customer-id <id>` | Account ID (optional) |
+| Flag                     | Description                               |
+| ------------------------ | ----------------------------------------- |
+| `-d, --device`           | Device flow for SSH/headless environments |
+| `-c, --customer-id <id>` | Account ID (optional)                     |
 
 ```bash
 bdata login            # browser OAuth (operator)
@@ -39,14 +39,14 @@ On login the CLI validates the key, saves credentials, and auto-creates required
 
 Fetch any URL (handles CAPTCHA, JS rendering, anti-bot).
 
-| Flag | Description |
-|------|-------------|
-| `-f, --format <fmt>` | `markdown` (default), `html`, `screenshot`, `json` |
-| `--country <code>` | Geo-target (e.g. `kr`, `us`, `jp`) |
-| `--zone <name>` | Web Unlocker zone |
-| `--mobile` | Mobile user agent |
-| `--async` | Submit async, return snapshot ID |
-| `-o, --output <path>` | Write to file |
+| Flag                  | Description                                        |
+| --------------------- | -------------------------------------------------- |
+| `-f, --format <fmt>`  | `markdown` (default), `html`, `screenshot`, `json` |
+| `--country <code>`    | Geo-target (e.g. `kr`, `us`, `jp`)                 |
+| `--zone <name>`       | Web Unlocker zone                                  |
+| `--mobile`            | Mobile user agent                                  |
+| `--async`             | Submit async, return snapshot ID                   |
+| `-o, --output <path>` | Write to file                                      |
 
 ```bash
 bdata scrape https://example.com
@@ -58,15 +58,15 @@ bdata scrape https://shop.example.com -f json --country kr -o out.json
 
 Search Google/Bing/Yandex. Google returns structured JSON (organic, ads, People Also Ask, related).
 
-| Flag | Description |
-|------|-------------|
-| `--engine <name>` | `google` (default), `bing`, `yandex` |
-| `--country <code>` | Localized results (e.g. `kr`) |
-| `--language <code>` | Language (e.g. `ko`, `en`) |
-| `--type <type>` | `web` (default), `news`, `images`, `shopping` |
-| `--page <n>` | Page, 0-indexed |
-| `--json` / `--pretty` | JSON output |
-| `-o, --output <path>` | Write to file |
+| Flag                  | Description                                   |
+| --------------------- | --------------------------------------------- |
+| `--engine <name>`     | `google` (default), `bing`, `yandex`          |
+| `--country <code>`    | Localized results (e.g. `kr`)                 |
+| `--language <code>`   | Language (e.g. `ko`, `en`)                    |
+| `--type <type>`       | `web` (default), `news`, `images`, `shopping` |
+| `--page <n>`          | Page, 0-indexed                               |
+| `--json` / `--pretty` | JSON output                                   |
+| `-o, --output <path>` | Write to file                                 |
 
 ```bash
 bdata search "유니클로 남성 자켓 가격" --type shopping --country kr --json
@@ -78,12 +78,12 @@ bdata search "open source scraping" --json | jq -r '.organic[].link'
 
 Triggers an async collection job, polls, returns structured results.
 
-| Flag | Description |
-|------|-------------|
-| `--format <fmt>` | `json` (default), `csv`, `ndjson`, `jsonl` |
-| `--timeout <seconds>` | Poll timeout (default 600) |
-| `--json` / `--pretty` | JSON output |
-| `-o, --output <path>` | Write to file |
+| Flag                  | Description                                |
+| --------------------- | ------------------------------------------ |
+| `--format <fmt>`      | `json` (default), `csv`, `ndjson`, `jsonl` |
+| `--timeout <seconds>` | Poll timeout (default 600)                 |
+| `--json` / `--pretty` | JSON output                                |
+| `-o, --output <path>` | Write to file                              |
 
 ```bash
 bdata pipelines list                                   # all types
@@ -94,11 +94,11 @@ bdata pipelines amazon_product_search "laptop" "https://www.amazon.com"
 
 ### Common pipeline types
 
-| Group | Types |
-|-------|-------|
-| E-commerce | `google_shopping`, `amazon_product`, `amazon_product_reviews`, `amazon_product_search` (`<keyword> <domain>`), `walmart_product`, `ebay_product`, `bestbuy_products`, `etsy_products`, `homedepot_products`, `zara_products` |
-| Professional | `linkedin_person_profile`, `linkedin_company_profile`, `linkedin_job_listings`, `linkedin_posts`, `linkedin_people_search` (`<url> <first> <last>`), `crunchbase_company`, `zoominfo_company_profile` |
-| Social | `instagram_profiles`/`_posts`/`_reels`/`_comments`, `facebook_posts`/`_marketplace_listings`/`_company_reviews`/`_events`, `tiktok_profiles`/`_posts`/`_shop`/`_comments`, `x_posts`, `youtube_profiles`/`_videos`/`_comments` (`<url> [n]`), `reddit_posts` |
+| Group        | Types                                                                                                                                                                                                                                                        |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| E-commerce   | `google_shopping`, `amazon_product`, `amazon_product_reviews`, `amazon_product_search` (`<keyword> <domain>`), `walmart_product`, `ebay_product`, `bestbuy_products`, `etsy_products`, `homedepot_products`, `zara_products`                                 |
+| Professional | `linkedin_person_profile`, `linkedin_company_profile`, `linkedin_job_listings`, `linkedin_posts`, `linkedin_people_search` (`<url> <first> <last>`), `crunchbase_company`, `zoominfo_company_profile`                                                        |
+| Social       | `instagram_profiles`/`_posts`/`_reels`/`_comments`, `facebook_posts`/`_marketplace_listings`/`_company_reviews`/`_events`, `tiktok_profiles`/`_posts`/`_shop`/`_comments`, `x_posts`, `youtube_profiles`/`_videos`/`_comments` (`<url> [n]`), `reddit_posts` |
 
 Most types take just `<url>`; the exceptions are noted in parentheses. Run `bdata pipelines list` for the live, complete set.
 

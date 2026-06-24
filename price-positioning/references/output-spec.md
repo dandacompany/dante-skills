@@ -15,30 +15,55 @@
   "banding": {
     "mode": "user",
     "bands": [
-      {"label": "저가", "min": null, "max": 80000.0},
-      {"label": "중가", "min": 80000.0, "max": 200000.0},
-      {"label": "프리미엄", "min": 200000.0, "max": null}
+      { "label": "저가", "min": null, "max": 80000.0 },
+      { "label": "중가", "min": 80000.0, "max": 200000.0 },
+      { "label": "프리미엄", "min": 200000.0, "max": null }
     ]
   },
   "bands": [
-    {"label": "저가", "count": 2, "share": 0.25, "min": 49000.0, "p25": 51500.0,
-     "median": 54000.0, "p75": 56500.0, "max": 59000.0, "mean": 54000.0,
-     "stdev": 5000.0, "examples": [{"brand": "TOPTEN", "item": "기본 자켓",
-     "price": 49000.0, "source_url": "https://shop.example.com/p/1"}]}
+    {
+      "label": "저가",
+      "count": 2,
+      "share": 0.25,
+      "min": 49000.0,
+      "p25": 51500.0,
+      "median": 54000.0,
+      "p75": 56500.0,
+      "max": 59000.0,
+      "mean": 54000.0,
+      "stdev": 5000.0,
+      "examples": [
+        {
+          "brand": "TOPTEN",
+          "item": "기본 자켓",
+          "price": 49000.0,
+          "source_url": "https://shop.example.com/p/1"
+        }
+      ]
+    }
   ],
   "whitespace": [
-    {"type": "largest_gap", "interval": [329000.0, 790000.0], "width": 461000.0,
-     "width_pct_of_range": 0.62, "confidence": "medium",
-     "evidence": "7 obs at/below 329000.0, 1 obs at/above 790000.0"}
+    {
+      "type": "largest_gap",
+      "interval": [329000.0, 790000.0],
+      "width": 461000.0,
+      "width_pct_of_range": 0.62,
+      "confidence": "medium",
+      "evidence": "7 obs at/below 329000.0, 1 obs at/above 790000.0"
+    }
   ],
   "outliers": [],
-  "value_metrics": {"per_unit": 8},
+  "value_metrics": { "per_unit": 8 },
   "data_gaps": [],
-  "flags": {"red": [], "yellow": ["8 observations is a small sample; treat bands as indicative"]}
+  "flags": {
+    "red": [],
+    "yellow": ["8 observations is a small sample; treat bands as indicative"]
+  }
 }
 ```
 
 필드 뜻
+
 - `as_of` — 보고 기준일. 지정 안 하면 관측치의 가장 최근 `observed_at`을 쓴다(시간 함수 미사용 → 결정론).
 - `banding.mode` — `user`(임계값) 또는 `quantile`(분위수).
 - `bands[]` — 밴드별 통계. `share`는 전체 대비 비율, `stdev`는 모표준편차.
@@ -52,25 +77,31 @@
 
 ```markdown
 # Pricing Landscape: {시장}
-*Skill: price-positioning | as of {날짜} | currency {통화}*
+
+_Skill: price-positioning | as of {날짜} | currency {통화}_
 
 Observations analyzed: {N} (excluded: {M})
 
 ## Bands
+
 | Band | Count | Share | Min | Median | Max | Mean | Stdev |
-|---|---:|---:|---:|---:|---:|---:|---:|
-| ... | ... | ... | ... | ... | ... | ... | ... |
+| ---- | ----: | ----: | --: | -----: | --: | ---: | ----: |
+| ...  |   ... |   ... | ... |    ... | ... |  ... |   ... |
 
 ## Pricing Whitespace
+
 - **{type}** interval {[lo, hi]} (confidence: {high/medium/low}) — {evidence}
 
 ## Data Gaps
+
 - ...
 
 ## Flags
+
 **Red**
+
 - ...
-**Yellow**
+  **Yellow**
 - ...
 ```
 

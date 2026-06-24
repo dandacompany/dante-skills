@@ -17,20 +17,20 @@ marp report.md --html --allow-local-files -o report.html
 
 ## 슬라이드 12장 표준 구성
 
-| # | 섹션 | 입력 |
-|---|---|---|
-| 1 | 표지 + 한 줄 결론 | 분석가 종합 |
-| 2 | 브랜드 개요 | brand_profile.md |
-| 3 | 제품·서비스 라인업 | brand_profile + Web Unlocker scrap |
-| 4 | 경쟁사 매트릭스 | competitor_matrix.csv |
-| 5 | 검색 트렌드 (12개월) | serp_trends.json |
-| 6 | 언론·SNS 멘션 | social_mentions.json |
-| 7 | 리뷰 분석 | Trustpilot dataset |
-| 8 | 가격 정책 비교 | pricing_scrape.csv |
-| 9 | 시장 점유 / 카테고리 동향 | Naver/Coupang products dataset |
-| 10 | SWOT 매트릭스 | swot_matrix.json (swot-from-signals) |
-| 11 | 기회·리스크 TOP 3 | insights.md |
-| 12 | 시사점 + 다음 액션 | 분석가 종합 |
+| #   | 섹션                      | 입력                                 |
+| --- | ------------------------- | ------------------------------------ |
+| 1   | 표지 + 한 줄 결론         | 분석가 종합                          |
+| 2   | 브랜드 개요               | brand_profile.md                     |
+| 3   | 제품·서비스 라인업        | brand_profile + Web Unlocker scrap   |
+| 4   | 경쟁사 매트릭스           | competitor_matrix.csv                |
+| 5   | 검색 트렌드 (12개월)      | serp_trends.json                     |
+| 6   | 언론·SNS 멘션             | social_mentions.json                 |
+| 7   | 리뷰 분석                 | Trustpilot dataset                   |
+| 8   | 가격 정책 비교            | pricing_scrape.csv                   |
+| 9   | 시장 점유 / 카테고리 동향 | Naver/Coupang products dataset       |
+| 10  | SWOT 매트릭스             | swot_matrix.json (swot-from-signals) |
+| 11  | 기회·리스크 TOP 3         | insights.md                          |
+| 12  | 시사점 + 다음 액션        | 분석가 종합                          |
 
 ## 디자인 가드 (위반 시 빌드 거부)
 

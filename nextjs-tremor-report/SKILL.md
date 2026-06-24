@@ -51,7 +51,11 @@ rm -rf "$APP" && mkdir -p "$APP" && cd "$APP"
   "name": "brand-intel-${BRAND}",
   "version": "0.1.0",
   "private": true,
-  "scripts": { "dev": "next dev", "build": "next build", "start": "next start" },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  },
   "dependencies": {
     "next": "^15.0.0",
     "react": "^18.3.0",
@@ -85,6 +89,7 @@ rm -rf "$APP" && mkdir -p "$APP" && cd "$APP"
 ### 3. `app/globals.css` — 타이포 클래스 + 시그니처 컴포넌트
 
 `references/globals-css.md` 그대로 사용. 포함되는 클래스:
+
 - `.type-display` / `.type-hero` / `.type-h1~h3` / `.type-body` / `.type-small` / `.type-meta` / `.num-tabular`
 - `.ledger-hairline` — top/bottom 1px border (헤더·푸터 시그니처)
 - `.edge-mark` — 절대 위치 메타 라벨 (좌상단 SESSION · 우상단 BRAND CODE)
@@ -97,13 +102,13 @@ rm -rf "$APP" && mkdir -p "$APP" && cd "$APP"
 
 `references/page-blueprints.md` 의 5 페이지 spec 그대로. 각 페이지 헤더는 `<div className="type-meta">PAGE · {LABEL}</div>` + `<h1 className="type-hero">{브랜드명} · {타이틀}</h1>` 패턴 유지.
 
-| 페이지 | 컴포넌트 | 데이터 소스 |
-|---|---|---|
-| `app/page.tsx` (홈) | KPI 4 card (rust-stripe) + Key Insights 5 (ledger-hairline grid 12) | `kpis[]`, `insights[]` |
-| `app/swot/page.tsx` | 2×2 quadrant Card grid (S/W/O/T), 각 카드 좌측에 거대 글자 마크 (rust/slate 교차) | `swot.{strengths,weaknesses,opportunities,threats}[]` |
-| `app/charts/page.tsx` | 2×2 chart grid — SerpChart / PriceDistChart / RevenueChart / SocialChart | `trends.{serp,priceDist,revenue,social}[]` |
-| `app/fact-check/page.tsx` | 헤더 callout (검증 N건 `dl-mark` 강조) + 4열 table (주장/출처/상태 badge/비고) | `factCheck[]` |
-| `app/competitors/page.tsx` | 5열 table — self 행은 rust-stripe + bg-paper-strong + "SELF" 메타 | `competitors[]` |
+| 페이지                     | 컴포넌트                                                                          | 데이터 소스                                           |
+| -------------------------- | --------------------------------------------------------------------------------- | ----------------------------------------------------- |
+| `app/page.tsx` (홈)        | KPI 4 card (rust-stripe) + Key Insights 5 (ledger-hairline grid 12)               | `kpis[]`, `insights[]`                                |
+| `app/swot/page.tsx`        | 2×2 quadrant Card grid (S/W/O/T), 각 카드 좌측에 거대 글자 마크 (rust/slate 교차) | `swot.{strengths,weaknesses,opportunities,threats}[]` |
+| `app/charts/page.tsx`      | 2×2 chart grid — SerpChart / PriceDistChart / RevenueChart / SocialChart          | `trends.{serp,priceDist,revenue,social}[]`            |
+| `app/fact-check/page.tsx`  | 헤더 callout (검증 N건 `dl-mark` 강조) + 4열 table (주장/출처/상태 badge/비고)    | `factCheck[]`                                         |
+| `app/competitors/page.tsx` | 5열 table — self 행은 rust-stripe + bg-paper-strong + "SELF" 메타                 | `competitors[]`                                       |
 
 ### 5. ECharts 4종 차트 컴포넌트 — `components/Charts.tsx`
 
@@ -159,27 +164,27 @@ URL: $DEPLOY_URL
 
 ## 자가 검증 체크리스트 (deploy 전)
 
-| 검증 | Pass 기준 |
-|---|---|
-| `npm run build` 통과 | 5 페이지 모두 `○ (Static)` 표시 |
-| `printenv \| grep VERCEL_API_TOKEN` | 비어있지 않음 |
-| 임의 페이지 텍스트 검색 | "TODO" "placeholder" "lorem" "데이터 없음" "추정 전까지" 0건 |
-| 색 팔레트 | tailwind.config.ts 의 7색만 등장 (rg "#[0-9A-Fa-f]{6}" app/ components/ lib/) |
-| 폰트 | 본문 globals.css 가 `font-family: 'Noto Serif KR'` 로 시작 |
-| 이모지 | `rg "[\U0001F300-\U0001F9FF]" app/ components/` 0건 |
-| 챕터 배지 | `rg -i "chapter\|episode\|session ·" app/` 0건 (요청 시 예외) |
+| 검증                                | Pass 기준                                                                     |
+| ----------------------------------- | ----------------------------------------------------------------------------- |
+| `npm run build` 통과                | 5 페이지 모두 `○ (Static)` 표시                                               |
+| `printenv \| grep VERCEL_API_TOKEN` | 비어있지 않음                                                                 |
+| 임의 페이지 텍스트 검색             | "TODO" "placeholder" "lorem" "데이터 없음" "추정 전까지" 0건                  |
+| 색 팔레트                           | tailwind.config.ts 의 7색만 등장 (rg "#[0-9A-Fa-f]{6}" app/ components/ lib/) |
+| 폰트                                | 본문 globals.css 가 `font-family: 'Noto Serif KR'` 로 시작                    |
+| 이모지                              | `rg "[\U0001F300-\U0001F9FF]" app/ components/` 0건                           |
+| 챕터 배지                           | `rg -i "chapter\|episode\|session ·" app/` 0건 (요청 시 예외)                 |
 
 체크 실패 시 deploy 중단 → 항목 수정 후 재실행.
 
 ## 트러블슈팅
 
-| 증상 | 원인 | 조치 |
-|---|---|---|
-| `next: command not found` | install 실패 또는 PATH 누락 | `npx next build` 로 직접 호출 |
-| `npm install` 17분+ 진행 | SMB 마운트 (`/Volumes/...` 또는 `/paperclip/...`) 에서 small file IO 병목 | `/tmp/{brand}-report-app` 로 옮겨서 install |
-| Vercel `Not Authorized` (401) | token 만료 또는 invalid | 새 토큰 발급 → 컨테이너 `.env` 갱신 → 컨테이너 재시작 |
-| 한글 □□ 깨짐 | tailwind config 의 font-serif 미설정 또는 폰트 import 누락 | `globals.css` 에 `@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+KR...')` 확인 |
-| 차트 SSR 에러 | echarts 가 window 참조 | `next/dynamic` 으로 `ReactECharts` 를 `ssr: false` 로 감싸기 |
+| 증상                          | 원인                                                                      | 조치                                                                                             |
+| ----------------------------- | ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `next: command not found`     | install 실패 또는 PATH 누락                                               | `npx next build` 로 직접 호출                                                                    |
+| `npm install` 17분+ 진행      | SMB 마운트 (`/Volumes/...` 또는 `/paperclip/...`) 에서 small file IO 병목 | `/tmp/{brand}-report-app` 로 옮겨서 install                                                      |
+| Vercel `Not Authorized` (401) | token 만료 또는 invalid                                                   | 새 토큰 발급 → 컨테이너 `.env` 갱신 → 컨테이너 재시작                                            |
+| 한글 □□ 깨짐                  | tailwind config 의 font-serif 미설정 또는 폰트 import 누락                | `globals.css` 에 `@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+KR...')` 확인 |
+| 차트 SSR 에러                 | echarts 가 window 참조                                                    | `next/dynamic` 으로 `ReactECharts` 를 `ssr: false` 로 감싸기                                     |
 
 ## References
 

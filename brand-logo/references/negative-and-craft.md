@@ -12,14 +12,14 @@ no complicated illustration, no neon glow, no cool pure-white if brand uses warm
 
 ## 디자인 조건어 사전 (추상어 대체)
 
-| ❌ 추상어 | ✅ 디자인 조건어 |
-|---|---|
-| beautiful / cool / stylish | flat vector, clean, refined |
-| simple | strong silhouette, minimal strokes, geometric |
-| works everywhere | scalable, favicon-ready, app-icon-ready |
-| not cluttered | balanced negative space, generous margins |
-| professional | professional brand identity, editorial |
-| modern | geometric, structured, node/grid motif |
+| ❌ 추상어                  | ✅ 디자인 조건어                              |
+| -------------------------- | --------------------------------------------- |
+| beautiful / cool / stylish | flat vector, clean, refined                   |
+| simple                     | strong silhouette, minimal strokes, geometric |
+| works everywhere           | scalable, favicon-ready, app-icon-ready       |
+| not cluttered              | balanced negative space, generous margins     |
+| professional               | professional brand identity, editorial        |
+| modern                     | geometric, structured, node/grid motif        |
 
 ## 모델 글자 약점 회피
 
