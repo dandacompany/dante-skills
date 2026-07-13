@@ -1,10 +1,14 @@
 # dante-skills
 
-> Claude Code / Claude AI용 에이전트 스킬 모음 by [단테(Dante)](https://dante-labs.com)
+> 단테랩스(Dante Labs)가 강의·실무에서 직접 만들어 쓰는 **교육용 Claude Code 에이전트 스킬 모음** by [단테(Dante)](https://dante-labs.com)
 
 [![skills.sh](https://img.shields.io/badge/skills.sh-dante--skills-blue)](https://skills.sh/dandacompany/dante-skills)
 
+YouTube 강의·MBA 수업·커뮤니티 실습에서 바로 써먹을 수 있도록 정리한 스킬들입니다. 메모리 관리, 서버 보안 점검, 시장조사 분석, 보고서·슬라이드 제작, 데이터 수집·연동 등 실무 자동화에 필요한 도구를 모았습니다.
+
 ## 설치 방법
+
+[Skills CLI](https://skills.sh/)가 필요합니다 (`npm i -g skills`).
 
 ```bash
 # 특정 스킬 설치 (글로벌)
@@ -16,40 +20,63 @@ skills add dandacompany/dante-skills -g -y --copy -a claude-code
 
 ## 스킬 목록
 
-| 스킬                                                    | 설명                                                                                                                                                                                                                                                                                  | 설치                                                            |
-| ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
-| [dream](./dream/)                                       | 프로젝트 메모리 정리 및 최적화. 메모리 파일 중복·충돌·오래된 항목을 정리하고 인덱스를 재구성합니다.                                                                                                                                                                                   | `skills add dandacompany/dante-skills@dream`                    |
-| [brand-research-glossary](./brand-research-glossary/)   | B2C 브랜드 시장조사 표기·용어 사전 (무신사·29CM 등 한국 e-커머스, Bright Data 제품명, 슬라이드 형식, 금지 표현). Brand Intelligence Lab 회사 공통.                                                                                                                                    | `skills add dandacompany/dante-skills@brand-research-glossary`  |
-| [swot-from-signals](./swot-from-signals/)               | 정성·정량 신호로부터 SWOT 4사분면을 자동 도출하는 분석 패턴. 각 칸 3개씩 근거 URL/시그널값 명시. 데이터 분석가 전용.                                                                                                                                                                  | `skills add dandacompany/dante-skills@swot-from-signals`        |
-| [price-positioning](./price-positioning/)               | 수집된 가격 관측치로 시장 가격 포지셔닝 맵과 빈 가격대(화이트스페이스)를 결정론적으로 도출. 수집 도구 비종속(어떤 시장·통화도) + stdlib 결정론 분석기 동봉. 데이터 분석가용.                                                                                                          | `skills add dandacompany/dante-skills@price-positioning`        |
-| [marp-slide-build](./marp-slide-build/)                 | Marp 마크다운으로 임원 보고용 시장조사 슬라이드 12~15장 빌드. 단테랩스 paper+ink+rust 디자인 가드 강제. 슬라이드 제작자 전용.                                                                                                                                                         | `skills add dandacompany/dante-skills@marp-slide-build`         |
-| [report-evidence-citation](./report-evidence-citation/) | 모든 산출물에서 사실/의견 분리 + 출처 URL 보존 + 평가성 어휘 차단. 회사 공통 게이트.                                                                                                                                                                                                  | `skills add dandacompany/dante-skills@report-evidence-citation` |
-| [brightdata-guide](./brightdata-guide/)                 | Bright Data 웹 수집 가이드(MCP **+ CLI** 통합). MCP 도구가 있으면 MCP를, 없으면(예: delegate 서브에이전트 — MCP 미상속, 터미널·스킬은 상속) 터미널의 `bdata`/`brightdata` CLI로 검색·스크랩·구조화 추출. 헤르메스·Codex 등 범용. 보안 패치(설정 자동편집·curl-to-bash·전역설치 제거). | `skills add dandacompany/dante-skills@brightdata-guide`         |
-| [oh-my-wiki](./oh-my-wiki/)                             | Karpathy 스타일 LLM 위키 스킬(omw) 설치 안내. 소스 ingest → 구조화 위키 → 인용 달린 query. 멀티 볼트·autoresearch·팩트체크·스웜 포함. 실제 설치는 플러그인 마켓플레이스.                                                                                                              | `/plugin install oh-my-wiki@oh-my-wiki-marketplace`             |
-| [brand-logo](./brand-logo/)                             | 브랜드 로고 컨셉 디렉팅 패턴. 브리프 → 심볼 컨셉 → 이미지 프롬프트 → 생성 → 벡터화 인계의 로고 디렉터 워크플로. 모델 글자 약점 회피(추상·모노그램 우선), DESIGN.md 브랜드 토큰 고정, 강한 네거티브·평가 체크리스트. 디자이너용.                                                       | `skills add dandacompany/dante-skills@brand-logo`               |
-| [magma-support](./magma-support/)                       | MAGMA 고객지원 1차 응대 지식(샘플). 고객 문의를 정책 기반으로 분류·1차 답변 초안 작성, 확실하지 않은 건 담당자 확인 필요로 표시. 웹훅 구독에서 로드해 외부 문의에 대응. 헤르메스 강의 4.1 웹훅 실습 사전 준비물.                                                                      | `hermes skills install dandacompany/dante-skills/magma-support` |
-| [iris-security-audit](./iris-security-audit/)           | MAGMA 4기둥 보안 감사(키·권한·스킬·격리) 체크리스트. Hermes 내장 진단(skills audit·security audit·doctor)을 순회하고 위험 삼각·Rule of Two로 판정해 "잘하는 것 / 조치 필요 / 신규 위험" 3부로 보고. 전부 읽기·안전 명령, 위험 설정은 보고만. 헤르메스 강의 4.3 보안 감사 자동화 실습 준비물.                | `hermes skills install dandacompany/dante-skills/iris-security-audit --category security` |
-| [tally-api](./tally-api/)                               | Tally.so 폼 플랫폼 REST API·웹훅 연동. 폼·제출(submission)·분석·워크스페이스·조직 사용자 조회 및 웹훅 생성/서명검증. curl CLI 래퍼(`tally.sh`) + HMAC-SHA256 서명 검증 스크립트 동봉. Tally 폼 데이터 추출·실시간 제출 처리에 사용.                                                   | `skills add dandacompany/dante-skills@tally-api`                |
+### 🧠 메모리 · 지식 관리
 
-## Paperclip 회사 레벨 등록 (GitHub URL 한 줄)
+| 스킬                        | 설명                                                                                                                                                       | 설치                                                |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| [dream](./dream/)           | 프로젝트 메모리 정리·최적화. 메모리 파일의 중복·충돌·오래된 항목을 정리하고 인덱스를 재구성합니다.                                                         | `skills add dandacompany/dante-skills@dream`        |
+| [oh-my-wiki](./oh-my-wiki/) | Karpathy 스타일 LLM 위키 스킬(omw). 소스 ingest → 구조화 위키 → 인용 달린 query. 멀티 볼트·autoresearch·팩트체크·스웜 포함. (설치는 플러그인 마켓플레이스) | `/plugin install oh-my-wiki@oh-my-wiki-marketplace` |
 
-Paperclip 콘솔 → **Company → Skills Library → `+ Add Skill`** 폼에 아래 GitHub URL을 그대로 붙여넣으면 자동 import 됩니다 (Paste path, GitHub URL, or skills.).
+### 🔒 서버 · 인프라 보안 점검
 
-```
-https://github.com/dandacompany/dante-skills/tree/main/brand-research-glossary
-https://github.com/dandacompany/dante-skills/tree/main/swot-from-signals
-https://github.com/dandacompany/dante-skills/tree/main/price-positioning
-https://github.com/dandacompany/dante-skills/tree/main/marp-slide-build
-https://github.com/dandacompany/dante-skills/tree/main/report-evidence-citation
-```
+| 스킬                                            | 설명                                                                                                                                                                                                                                                 | 설치                                                                                      |
+| ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| [infra-security-audit](./infra-security-audit/) | 자체 호스팅 Linux 서버/VPS 보안 점검·하드닝. ufw·SSH·fail2ban·노출 포트·자동 업데이트·Cloudflare·Tailscale 점검. 기본은 읽기 전용 감사(하드닝 점수+우선순위 리포트), 안전한 수정만 자동 적용하고 위험 변경은 백업·자가 잠금 방지와 함께 승인 게이트. | `skills add dandacompany/dante-skills@infra-security-audit`                               |
+| [iris-security-audit](./iris-security-audit/)   | Hermes 에이전트 4기둥 보안 감사(키·권한·스킬·격리) 체크리스트. 내장 진단을 순회하고 위험 삼각·Rule of Two로 판정해 "잘하는 것 / 조치 필요 / 신규 위험" 3부로 보고. 전부 읽기·안전 명령.                                                              | `hermes skills install dandacompany/dante-skills/iris-security-audit --category security` |
 
-자세한 회사 시나리오는 단테랩스 YouTube #23 영상 가이드 참조.
+### 📊 시장조사 · 데이터 분석
+
+| 스킬                                                    | 설명                                                                                                                                                   | 설치                                                            |
+| ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------- |
+| [swot-from-signals](./swot-from-signals/)               | 정성·정량 신호로부터 SWOT 4사분면을 자동 도출. 각 칸 3개씩 근거 URL/시그널값 명시.                                                                     | `skills add dandacompany/dante-skills@swot-from-signals`        |
+| [price-positioning](./price-positioning/)               | 수집된 가격 관측치로 가격 포지셔닝 맵과 빈 가격대(화이트스페이스)를 결정론적으로 도출. 수집 도구 비종속(어떤 시장·통화도) + stdlib 결정론 분석기 동봉. | `skills add dandacompany/dante-skills@price-positioning`        |
+| [report-evidence-citation](./report-evidence-citation/) | 모든 산출물에서 사실/의견 분리 + 출처 URL 보존 + 평가성 어휘 차단. 신뢰성 게이트.                                                                      | `skills add dandacompany/dante-skills@report-evidence-citation` |
+| [brand-research-glossary](./brand-research-glossary/)   | B2C 브랜드 시장조사 표기·용어 사전(무신사·29CM 등 한국 e-커머스, Bright Data 제품명, 슬라이드 형식, 금지 표현).                                        | `skills add dandacompany/dante-skills@brand-research-glossary`  |
+
+### 📑 보고서 · 슬라이드 · 디자인
+
+| 스킬                                            | 설명                                                                                                                                                                 | 설치                                                        |
+| ----------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| [marp-slide-build](./marp-slide-build/)         | Marp 마크다운으로 임원 보고용 시장조사 슬라이드 12~15장 빌드. 단테랩스 paper+ink+rust 디자인 가드 강제.                                                              | `skills add dandacompany/dante-skills@marp-slide-build`     |
+| [nextjs-tremor-report](./nextjs-tremor-report/) | 시장조사 보고서를 Next.js 15 + Tailwind + ECharts 인터랙티브 웹앱으로 빌드해 Vercel에 배포. 단테랩스 디자인 토큰·5페이지 표준 구조·ECharts 4종 패턴 강제.            | `skills add dandacompany/dante-skills@nextjs-tremor-report` |
+| [brand-logo](./brand-logo/)                     | 브랜드 로고 컨셉 디렉팅 패턴. 브리프 → 심볼 컨셉 → 이미지 프롬프트 → 생성 → 벡터화 인계. 모델 글자 약점 회피(추상·모노그램 우선), 브랜드 토큰 고정, 평가 체크리스트. | `skills add dandacompany/dante-skills@brand-logo`           |
+
+### 🔌 데이터 수집 · API 연동
+
+| 스킬                                    | 설명                                                                                                                                                           | 설치                                                    |
+| --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| [brightdata-guide](./brightdata-guide/) | Bright Data 웹 수집 가이드(MCP + CLI 통합). MCP 도구가 있으면 MCP를, 없으면 터미널의 `bdata`/`brightdata` CLI로 검색·스크랩·구조화 추출. Hermes·Codex 등 범용. | `skills add dandacompany/dante-skills@brightdata-guide` |
+| [tally-api](./tally-api/)               | Tally.so 폼 플랫폼 REST API·웹훅 연동. 폼·제출·분석·워크스페이스 조회 및 웹훅 생성/서명검증. curl CLI 래퍼(`tally.sh`) + HMAC-SHA256 서명 검증 스크립트 동봉.  | `skills add dandacompany/dante-skills@tally-api`        |
+
+### ⚙️ 에이전트 운영 · 모델 최적화
+
+| 스킬                                                    | 설명                                                                                                                                                                              | 설치                                              |
+| ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
+| [gpt-model-effort-advisor](./gpt-model-effort-advisor/) | GPT-5.6 모델 티어(Luna/Terra/Sol)·추론 effort(Low~Ultra)를 과업에 맞게 추천하고, 실사용 성공/실패를 학습해 갱신하며, 실패를 진단(effort↑ vs 모델↑)하고 현재 세션 모델·effort를 실시간 판독. **codex 스킬**. | `cp -r gpt-model-effort-advisor ~/.codex/skills/` |
+
+### 🎓 Hermes 강의 실습용
+
+| 스킬                              | 설명                                                                                                                                                            | 설치                                                            |
+| --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| [magma-support](./magma-support/) | MAGMA 고객지원 1차 응대 지식(샘플). 고객 문의를 정책 기반으로 분류·1차 답변 초안 작성, 불확실한 건 담당자 확인 필요로 표시. 헤르메스 강의 4.1 웹훅 실습 준비물. | `hermes skills install dandacompany/dante-skills/magma-support` |
+
+> `iris-security-audit`(강의 4.3), `tally-api`, `brightdata-guide`도 헤르메스 강의 실습에서 함께 활용됩니다.
 
 ## 스킬 상세
 
 ### 🌙 dream
 
-메모리 통합 및 최적화 스킬. 뇌가 수면 중 기억을 통합하듯, 오래된 메모리를 정리하고 신호를 강화합니다.
+메모리 통합·최적화 스킬. 뇌가 수면 중 기억을 통합하듯, 오래된 메모리를 정리하고 신호를 강화합니다.
 
 **사용 시점:**
 
@@ -62,22 +89,13 @@ https://github.com/dandacompany/dante-skills/tree/main/report-evidence-citation
 skills add dandacompany/dante-skills@dream -g -y --copy -a claude-code
 ```
 
-### 🏢 Brand Intelligence Lab — 4종 스킬 묶음
-
-YouTube #23 영상 "Paperclip × Bright Data 멀티에이전트 브랜드 시장조사" 시나리오에서 사용되는 회사 공통 + 직무별 스킬 묶음. 무신사 · 29CM 예시.
-
-- `brand-research-glossary` (회사 공통) — 표기·용어 일관성
-- `swot-from-signals` (데이터 분석가) — SWOT 자동 도출
-- `marp-slide-build` (슬라이드 제작자) — 임원 보고용 슬라이드 빌드 + 디자인 가드
-- `report-evidence-citation` (회사 공통) — 사실/의견 분리 + 인용 보존
-
 ### 📈 price-positioning
 
-수집된 가격 관측치(브랜드·품목·가격·출처)로부터 **가격 포지셔닝 맵**과 **빈 가격대(화이트스페이스)** 를 결정론적으로 도출하는 분석 패턴. `swot-from-signals`와 같은 "수집물 → 분석" 계열이라 **수집 도구에 종속되지 않는다** — 웹 수집 MCP·검색 API·사내 시트·수기 입력 무엇으로 모았든 동일하게 동작하고, 어떤 시장·통화에도 쓸 수 있다.
+수집된 가격 관측치(브랜드·품목·가격·출처)로부터 **가격 포지셔닝 맵**과 **빈 가격대(화이트스페이스)** 를 결정론적으로 도출하는 분석 패턴. "수집물 → 분석" 계열이라 **수집 도구에 종속되지 않는다** — 웹 수집 MCP·검색 API·사내 시트·수기 입력 무엇으로 모았든 동일하게 동작하고, 어떤 시장·통화에도 쓸 수 있다.
 
-- 입력: 정규화 관측치(CSV/JSON). 여러 일꾼에게 가격대를 나눠 맡길 때 쓸 "수집 계약" 문구 포함.
+- 입력: 정규화 관측치(CSV/JSON)
 - 처리: stdlib 전용 결정론 분석기(`scripts/positioning.py`) — 밴드별 통계·화이트스페이스·이상치·플래그. 같은 입력이면 항상 같은 출력. 네트워크·환경변수·외부 실행 없음.
-- 출력: `positioning.json`(고정 스키마) + `pricing-landscape.md`(고정 섹션). 진입 가격대 권고는 분석가가 근거·확신도와 함께 덧붙임.
+- 출력: `positioning.json`(고정 스키마) + `pricing-landscape.md`(고정 섹션)
 
 ```bash
 skills add dandacompany/dante-skills@price-positioning -g -y --copy -a claude-code
@@ -85,7 +103,7 @@ skills add dandacompany/dante-skills@price-positioning -g -y --copy -a claude-co
 
 ### 📚 oh-my-wiki
 
-Karpathy "LLM Wiki" 워크플로의 Claude Code 구현. 이 repo 의 항목은 **설치 안내용 포인터**이고, 실제 스킬·훅·커맨드는 별도 플러그인 마켓플레이스로 배포된다.
+Karpathy "LLM Wiki" 워크플로의 Claude Code 구현. 이 repo의 항목은 **설치 안내용 포인터**이고, 실제 스킬·훅·커맨드는 별도 플러그인 마켓플레이스로 배포됩니다.
 
 ```
 /plugin marketplace add dandacompany/oh-my-wiki
@@ -93,6 +111,22 @@ Karpathy "LLM Wiki" 워크플로의 Claude Code 구현. 이 repo 의 항목은 *
 ```
 
 소스 ingest → 구조화 위키 → 인용 달린 query. 멀티 볼트(sqlite) · autoresearch · 팩트체크/일관성/용어집 · 스웜 병렬 디스패치 포함. 전체 문서: **[github.com/dandacompany/oh-my-wiki](https://github.com/dandacompany/oh-my-wiki)**
+
+### 🎚️ gpt-model-effort-advisor
+
+GPT-5.6의 두 다이얼 — **모델 티어**(Luna/Terra/Sol, 지능 상한)와 **추론 effort**(Low~Ultra, 사고 시간) — 를 과업에 맞게 골라 주는 **codex 스킬**. 자동 라우터가 아니라 **추천기**로, 근거 있는 출발점과 승급 규칙을 제안하고 전환은 사람이 한다.
+
+- **추천** — 과업 4축(검증가능성·실패비용·처리량·추론깊이)으로 티어·effort와 "싸게 먼저 → 실패 지점에서만 승급" 규칙 제시.
+- **학습** — 실사용 성공/실패를 `registry.py`에 기록. 개인 이력이 콜드스타트 휴리스틱보다 우선한다(모델이 바뀌어도 낡지 않음).
+- **실패 진단** — 얕은 추론이면 effort↑, **High에서도 실패면 effort 말고 모델 티어↑**, 무한 다듬기면 effort↓+완료 기준 명시.
+- **세션 상태** — 현재 세션의 모델·effort를 실시간 판독.
+
+```bash
+# codex 스킬 — 폴더를 codex 스킬 경로에 복사
+cp -r gpt-model-effort-advisor ~/.codex/skills/
+```
+
+레지스트리는 빈 상태로 시작해 사용자의 실제 결과로 채워진다.
 
 ---
 
@@ -112,3 +146,5 @@ Karpathy "LLM Wiki" 워크플로의 Claude Code 구현. 이 repo 의 항목은 *
 - **YouTube**: [@dante-labs](https://youtube.com/@dante-labs)
 - **Discord**: [Dante Labs Community](https://discord.com/invite/rXyy5e9ujs)
 - **Email**: dante@dante-labs.com
+
+☕️ 도움이 되셨다면 [커피 한 잔 후원](https://buymeacoffee.com/dante.labs)도 감사히 받습니다.
