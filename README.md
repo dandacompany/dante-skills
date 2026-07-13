@@ -95,6 +95,29 @@ Karpathy "LLM Wiki" 워크플로의 Claude Code 구현. 이 repo 의 항목은 *
 
 소스 ingest → 구조화 위키 → 인용 달린 query. 멀티 볼트(sqlite) · autoresearch · 팩트체크/일관성/용어집 · 스웜 병렬 디스패치 포함. 전체 문서: **[github.com/dandacompany/oh-my-wiki](https://github.com/dandacompany/oh-my-wiki)**
 
+### 🎚️ gpt-model-effort-advisor
+
+GPT-5.6의 두 다이얼 — **모델 티어**(Luna/Terra/Sol, 지능 상한)와 **추론 effort**(Low~Ultra, 사고 시간) — 를 과업에 맞게 골라 주는 **codex 스킬**. 자동 라우터가 아니라 **추천기**로, 근거 있는 출발점과 승급 규칙을 제안하고 전환은 사람이 한다.
+
+- **추천** — 과업 4축(검증가능성·실패비용·처리량·추론깊이)으로 티어·effort와 "싸게 먼저 → 실패 지점에서만 승급" 규칙 제시.
+- **학습** — 실사용 성공/실패를 `registry.py`에 기록. 개인 이력이 콜드스타트 휴리스틱보다 우선한다(모델이 바뀌어도 낡지 않음).
+- **실패 진단** — 증상별로 올바른 처방 구분: 얕은 추론이면 effort↑, **High에서도 실패면 effort 말고 모델 티어↑**, 무한 다듬기면 effort↓+완료 기준 명시.
+- **세션 상태** — 현재 세션의 모델·effort를 실시간 판독.
+
+**사용 시점:**
+
+- 어떤 모델·추론 레벨로 돌릴지 정할 때
+- 결과 품질이 떨어지거나 만족스럽지 않을 때
+- 비용을 줄이고 싶지만 품질은 지키고 싶을 때
+- 지금 세션이 무슨 모델·effort인지 확인할 때
+
+```bash
+# codex 스킬 — 폴더를 codex 스킬 경로에 복사
+cp -r gpt-model-effort-advisor ~/.codex/skills/
+```
+
+레지스트리는 빈 상태로 시작해 사용자의 실제 결과로 채워진다.
+
 ---
 
 ## 별도 배포 도구
