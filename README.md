@@ -36,12 +36,13 @@ skills add dandacompany/dante-skills -g -y --copy -a claude-code
 
 ### 📊 시장조사 · 데이터 분석
 
-| 스킬                                                    | 설명                                                                                                                                                   | 설치                                                            |
-| ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------- |
-| [swot-from-signals](./swot-from-signals/)               | 정성·정량 신호로부터 SWOT 4사분면을 자동 도출. 각 칸 3개씩 근거 URL/시그널값 명시.                                                                     | `skills add dandacompany/dante-skills@swot-from-signals`        |
-| [price-positioning](./price-positioning/)               | 수집된 가격 관측치로 가격 포지셔닝 맵과 빈 가격대(화이트스페이스)를 결정론적으로 도출. 수집 도구 비종속(어떤 시장·통화도) + stdlib 결정론 분석기 동봉. | `skills add dandacompany/dante-skills@price-positioning`        |
-| [report-evidence-citation](./report-evidence-citation/) | 모든 산출물에서 사실/의견 분리 + 출처 URL 보존 + 평가성 어휘 차단. 신뢰성 게이트.                                                                      | `skills add dandacompany/dante-skills@report-evidence-citation` |
-| [brand-research-glossary](./brand-research-glossary/)   | B2C 브랜드 시장조사 표기·용어 사전(무신사·29CM 등 한국 e-커머스, Bright Data 제품명, 슬라이드 형식, 금지 표현).                                        | `skills add dandacompany/dante-skills@brand-research-glossary`  |
+| 스킬                                                    | 설명                                                                                                                                                                                                                 | 설치                                                            |
+| ------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| [deep-research](./deep-research/)                       | 병렬 웹 검색·다중 소스 검증·신뢰도 추적으로 인용 달린 심층 리서치 보고서를 생성. 시장·경쟁·기술·학술·재무·법률·트렌드 등 11개 리서치 타입 지원. 출처: [samber/cc-skills](https://github.com/samber/cc-skills) (MIT). | `skills add dandacompany/dante-skills@deep-research`            |
+| [swot-from-signals](./swot-from-signals/)               | 정성·정량 신호로부터 SWOT 4사분면을 자동 도출. 각 칸 3개씩 근거 URL/시그널값 명시.                                                                                                                                   | `skills add dandacompany/dante-skills@swot-from-signals`        |
+| [price-positioning](./price-positioning/)               | 수집된 가격 관측치로 가격 포지셔닝 맵과 빈 가격대(화이트스페이스)를 결정론적으로 도출. 수집 도구 비종속(어떤 시장·통화도) + stdlib 결정론 분석기 동봉.                                                               | `skills add dandacompany/dante-skills@price-positioning`        |
+| [report-evidence-citation](./report-evidence-citation/) | 모든 산출물에서 사실/의견 분리 + 출처 URL 보존 + 평가성 어휘 차단. 신뢰성 게이트.                                                                                                                                    | `skills add dandacompany/dante-skills@report-evidence-citation` |
+| [brand-research-glossary](./brand-research-glossary/)   | B2C 브랜드 시장조사 표기·용어 사전(무신사·29CM 등 한국 e-커머스, Bright Data 제품명, 슬라이드 형식, 금지 표현).                                                                                                      | `skills add dandacompany/dante-skills@brand-research-glossary`  |
 
 ### 📑 보고서 · 슬라이드 · 디자인
 
