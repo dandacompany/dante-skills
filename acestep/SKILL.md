@@ -219,16 +219,12 @@ cd "{project_root}/{.claude or .codex}/skills/acestep/" && bash ./scripts/aceste
 
 #### Case 1: Using Official Cloud API (`https://api.acemusic.ai`) without API key
 
-If `api_url` is `https://api.acemusic.ai` and `api_key` is `empty`, you MUST stop and guide the user to configure their key:
+If `api_url` is `https://api.acemusic.ai` and `api_key` is `empty`, you MUST stop and tell the user that the current session needs `ACE_MUSIC_API_KEY`.
 
 1. Tell the user: "You're using the ACE-Step official cloud API, but no API key is configured. An API key is required to use this service."
 2. Explain how to get a key: API keys are currently available through [acemusic.ai](https://acemusic.ai/api-key) for free.
-3. Use `AskUserQuestion` to ask the user to provide their API key.
-4. Once provided, configure it:
-   ```bash
-   cd "{project_root}/{.claude or .codex}/skills/acestep/" && bash ./scripts/acestep.sh config --set api_key <KEY>
-   ```
-5. Additionally, inform the user: "If you also want to render music videos (MV), it's recommended to configure a lyrics transcription API key as well (OpenAI Whisper or ElevenLabs Scribe), so that lyrics can be automatically transcribed with accurate timestamps. You can configure it later via the `acestep-lyrics-transcription` skill."
+3. Do not ask the user to paste the key into chat, write it to `config.json`, or print it.
+4. After the session environment provides `ACE_MUSIC_API_KEY`, run `config --check-key`. It must report `configured (ACE_MUSIC_API_KEY)` without exposing the value.
 
 #### Case 2: API key is configured
 
@@ -250,11 +246,11 @@ If health check fails:
 
 ```bash
 ./scripts/acestep.sh config --set api_url "https://api.acemusic.ai"
-./scripts/acestep.sh config --set api_key "your-key"
 ./scripts/acestep.sh config --set api_mode completion
+./scripts/acestep.sh config --check-key
 ```
 
-API keys are currently available through [acemusic.ai](https://acemusic.ai/api-key) for free.
+The session must provide `ACE_MUSIC_API_KEY`. API keys are currently available through [acemusic.ai](https://acemusic.ai/api-key) for free.
 
 **Local Service (Default):** No configuration needed — connects to `http://localhost:8001`.
 
@@ -262,10 +258,11 @@ API keys are currently available through [acemusic.ai](https://acemusic.ai/api-k
 
 ```bash
 ./scripts/acestep.sh config --set api_url "http://remote-server:8001"
-./scripts/acestep.sh config --set api_key "your-key"
 ```
 
-**API Key Handling**: When checking whether an API key is configured, use `config --check-key` which only reports `configured` or `empty` without printing the actual key. **NEVER use `config --get api_key`** or read `config.json` directly — these would expose the user's API key. The `config --list` command is safe — it automatically masks API keys as `***` in output.
+If the custom service requires authentication, provide `ACE_MUSIC_API_KEY` in the session environment.
+
+**API Key Handling**: Use `ACE_MUSIC_API_KEY` for API authentication. When checking whether it is available, use `config --check-key`; this reports only the source and status. **NEVER print the environment variable, use `config --get api_key`, ask the user to paste the key into chat, or read `config.json` directly.** The `config --list` command masks legacy keys as `***`.
 
 ### API Mode
 

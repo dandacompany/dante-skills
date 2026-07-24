@@ -109,7 +109,7 @@ ensure_config() {
             cp "$example" "$CONFIG_FILE"
             echo -e "${YELLOW}Config file created from config.example.json. Please configure your settings:${NC}"
             echo -e "  ${CYAN}./scripts/acestep.sh config --set api_url <url>${NC}"
-            echo -e "  ${CYAN}./scripts/acestep.sh config --set api_key <key>${NC}"
+            echo -e "  ${CYAN}Provide ACE_MUSIC_API_KEY in the current session environment.${NC}"
         else
             echo "$DEFAULT_CONFIG" > "$CONFIG_FILE"
         fi
@@ -164,7 +164,11 @@ set_config() {
     fi
 
     mv "$tmp_file" "$CONFIG_FILE"
-    echo "Set $key = $value"
+    if [ "$key" = "api_key" ]; then
+        echo "Set api_key = ***"
+    else
+        echo "Set $key = $value"
+    fi
 }
 
 # Load API URL
@@ -175,7 +179,12 @@ load_api_url() {
 
 # Load API Key
 load_api_key() {
-    local key=$(get_config "api_key")
+    # Prefer the session-provided credential. Keep config.json as a legacy
+    # fallback so existing local installations continue to work.
+    local key="${ACE_MUSIC_API_KEY:-}"
+    if [ -z "$key" ]; then
+        key=$(get_config "api_key")
+    fi
     echo "${key:-}"
 }
 
@@ -278,15 +287,24 @@ cmd_config() {
 
     case "$action" in
         "check-key")
-            local bearer=$(get_config "api_key")
+            local bearer
+            bearer=$(load_api_key)
             if [ -n "$bearer" ]; then
-                echo "api_key: configured"
+                if [ -n "${ACE_MUSIC_API_KEY:-}" ]; then
+                    echo "api_key: configured (ACE_MUSIC_API_KEY)"
+                else
+                    echo "api_key: configured (legacy config)"
+                fi
             else
                 echo "api_key: empty"
             fi
             ;;
         "get")
             [ -z "$key" ] && { echo -e "${RED}Error: --get requires KEY${NC}"; exit 1; }
+            if [ "$key" = "api_key" ]; then
+                echo -e "${RED}Error: api_key values cannot be printed. Use config --check-key.${NC}"
+                exit 1
+            fi
             local result=$(get_config "$key")
             [ -n "$result" ] && echo "$key = $result" || echo "Key not found: $key"
             ;;
@@ -307,7 +325,7 @@ cmd_config() {
             echo "Config file: $CONFIG_FILE"
             echo "Output dir: $OUTPUT_DIR"
             echo "----------------------------------------"
-            cat "$CONFIG_FILE"
+            jq 'walk(if type == "object" and has("api_key") and (.api_key | length) > 0 then .api_key = "***" else . end)' "$CONFIG_FILE"
             echo "----------------------------------------"
             echo ""
             echo "Usage:"
