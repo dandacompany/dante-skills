@@ -160,7 +160,7 @@ To get the actual synthesized lyrics, parse the JSON and read the top-level `lyr
 2. User-specified parameters **temporarily override** defaults but **do not modify** config.json
 3. Only `config --set` command **permanently modifies** config.json
 
-### Default Config File (`scripts/config.json`)
+### Default Config (`config.json`, generated from `scripts/config.example.json`)
 
 ```json
 {
@@ -258,7 +258,7 @@ API keys are currently available through [acemusic.ai](https://acemusic.ai/api-k
 
 **Local Service (Default):** No configuration needed — connects to `http://localhost:8001`.
 
-**Custom Remote Service:** Update `scripts/config.json` or use:
+**Custom Remote Service:** Update the generated `config.json` or use:
 
 ```bash
 ./scripts/acestep.sh config --set api_url "http://remote-server:8001"
@@ -269,7 +269,7 @@ API keys are currently available through [acemusic.ai](https://acemusic.ai/api-k
 
 ### API Mode
 
-The skill supports two API modes. Switch via `api_mode` in `scripts/config.json`:
+The skill supports two API modes. Switch via `api_mode` in the generated `config.json`:
 
 | Mode                   | Endpoint                          | Description                                                   |
 | ---------------------- | --------------------------------- | ------------------------------------------------------------- |
