@@ -669,11 +669,17 @@ parse_completion_response() {
         done
     else
         echo -e "  ${YELLOW}No audio files in response${NC}"
+        echo -e "  ${YELLOW}The server may still be rendering the track — check the saved result JSON below, and your account's library on the web.${NC}"
     fi
 
-    # Save full response JSON (strip base64 audio to keep file small)
+    # Save full response JSON (strip base64 audio to keep file small).
+    # `audio[]?` — the optional iterator matters: when a response carries no
+    # audio (async cloud jobs, metadata-only replies), `audio` is null and a
+    # plain `audio[]` makes jq abort with exit 5. Under `set -e` that killed
+    # the whole script here, one line before save_result, so the user lost the
+    # response JSON too and saw only an unexplained exit code.
     local clean_resp
-    clean_resp=$(jq 'del(.choices[].message.audio[].audio_url.url)' "$resp_file" 2>/dev/null)
+    clean_resp=$(jq 'del(.choices[].message.audio[]?.audio_url.url)' "$resp_file" 2>/dev/null)
     if [ -n "$clean_resp" ]; then
         save_result "$job_id" "$clean_resp"
     else
