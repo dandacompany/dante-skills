@@ -52,6 +52,7 @@ hermes skills install dandacompany/dante-skills/<skill-name>
 | [brand-research-glossary](./brand-research-glossary/)   | B2C 브랜드 시장조사 표기·용어 사전(무신사·29CM 등 한국 e-커머스, Bright Data 제품명, 슬라이드 형식, 금지 표현).                                                                                                      | `skills add dandacompany/dante-skills@brand-research-glossary`<br>`hermes skills install dandacompany/dante-skills/brand-research-glossary`   |
 | [magma-collect](./magma-collect/)                       | 커머스 웹 데이터 수집·적재 파이프라인. 무신사·네이버·쿠팡에서 남성 패션 상품 목록(가격·할인율·평점·리뷰 수)을 정규 CSV 스키마로 수집, 검증 스크립트 통과 후 컨펌 게이트를 거쳐 Supabase에 적재. 수집 윤리 가드 내장. | `skills add dandacompany/dante-skills@magma-collect`<br>`hermes skills install dandacompany/dante-skills/magma-collect`                       |
 | [magma-mart-seed](./magma-mart-seed/)                   | 시드 고정 더미 판매 마트 생성기. 고객·상품·프로모션·주문·주문상세 5개 CSV(약 5.5만 행)에 현실적 오염 패턴 12종(중복·결측·포맷 혼재·고아 FK 등)을 의도 주입 — 데이터 정제 실습 재료. 누가 돌려도 완전히 동일한 데이터. | `skills add dandacompany/dante-skills@magma-mart-seed`<br>`hermes skills install dandacompany/dante-skills/magma-mart-seed`                   |
+| [magma-dashboard](./magma-dashboard/)                   | Evidence.dev BI 대시보드 제작 파이프라인. Supabase 정제 뷰를 읽어 Markdown+SQL 한 장으로 판매 대시보드를 만들고 정적 빌드까지. 소스 연결(CA 인증서 정식 경로), 컴포넌트 8종 사용법, **만든 뒤 총계를 원본과 대조하는 검산 절차** 포함 — 검산 없이 완성 보고 금지. | `skills add dandacompany/dante-skills@magma-dashboard`<br>`hermes skills install dandacompany/dante-skills/magma-dashboard`                 |
 
 ### 📑 보고서 · 슬라이드 · 디자인
 
