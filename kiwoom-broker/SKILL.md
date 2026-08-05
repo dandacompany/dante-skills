@@ -22,22 +22,23 @@ description: 키움증권 REST API 연동 스킬. 모의투자(mockapi)를 기�
 
 ## 기본 사용법
 
+표준 라이브러리만 쓰므로 설치할 것이 없다.
+
 ```bash
-SKILL=~/.claude/skills/kiwoom-broker/scripts
+K="python3 $(dirname $0)/scripts/kiwoom.py"     # 스킬 폴더 기준
 
 # 토큰 상태 (토큰 값은 안 보인다)
-$SKILL/kiwoom_token.sh --status
-$SKILL/kiwoom_token.sh -p real --status
+$K token --status
+$K token --status -p real
 
 # ETF 종목 정보
-$SKILL/kiwoom_api.sh ka40002 /api/dostk/etf '{"stk_cd":"069500"}'
+$K call ka40002 /api/dostk/etf '{"stk_cd":"069500"}'
 
 # 주식 일봉 차트 — 1회에 600봉까지 온다
-$SKILL/kiwoom_api.sh ka10081 /api/dostk/chart \
-  '{"stk_cd":"069500","base_dt":"20260805","upd_stkpc_tp":"1"}'
+$K call ka10081 /api/dostk/chart '{"stk_cd":"069500","base_dt":"20260806","upd_stkpc_tp":"1"}'
 
 # 계좌 평가잔고 (모의)
-$SKILL/kiwoom_api.sh kt00018 /api/dostk/acnt '{"qry_tp":"1","dmst_stex_tp":"KRX"}'
+$K call kt00018 /api/dostk/acnt '{"qry_tp":"1","dmst_stex_tp":"KRX"}'
 ```
 
 `upd_stkpc_tp` 는 수정주가 구분이다(`1` = 적용). **한 프로젝트 안에서 이 값을 섞으면 평단 계산이 어긋난다.**
@@ -47,17 +48,17 @@ $SKILL/kiwoom_api.sh kt00018 /api/dostk/acnt '{"qry_tp":"1","dmst_stex_tp":"KRX"
 응답 헤더에 `cont-yn: Y` 와 `next-key` 가 오면 이어받을 데이터가 있다. 래퍼가 stderr 로 알려준다.
 
 ```bash
-$SKILL/kiwoom_api.sh -k "$NEXT_KEY" ka10081 /api/dostk/chart '{"stk_cd":"069500",...}'
+$K call ka10081 /api/dostk/chart '{"stk_cd":"069500",...}' -k "$NEXT_KEY"
 ```
 
 ## 주문 (실행 전에 반드시 읽을 것)
 
 ```bash
-# 이렇게 하면 거부된다 — 무엇을 주문하려는지 보여주고 멈춘다
-$SKILL/kiwoom_api.sh kt10000 /api/dostk/ordr '{"dmst_stex_tp":"KRX","stk_cd":"069500","ord_qty":"1","ord_uv":"","trde_tp":"3"}'
+# 이렇게 하면 거부된다 — 무엇을 주문하려는지 보여주고 멈춘다 (exit 2)
+$K call kt10000 /api/dostk/ordr '{"dmst_stex_tp":"KRX","stk_cd":"069500","ord_qty":"1","ord_uv":"","trde_tp":"3"}'
 
 # 확인한 뒤에만
-$SKILL/kiwoom_api.sh --confirm-order kt10000 /api/dostk/ordr '{...}'
+$K call kt10000 /api/dostk/ordr '{...}' --confirm-order
 ```
 
 - 수량·단가는 **문자열**로 보낸다 (`"1"`, 숫자 1 아님)
@@ -68,15 +69,6 @@ $SKILL/kiwoom_api.sh --confirm-order kt10000 /api/dostk/ordr '{...}'
 
 여러 에이전트가 같은 저장소에서 일할 때, **키를 가진 쪽을 하나로 좁히는 것**이 가장 단순한 사고 예방이다.
 `KIWOOM_AUTH_ENV` 로 자격증명 파일 경로를 프로필마다 다르게 준다.
-
-```bash
-# 집행 담당만 키를 갖는다
-KIWOOM_AUTH_ENV=~/.hermes/profiles/sam/kiwoom-mock.env   $SKILL/kiwoom_api.sh kt00018 /api/dostk/acnt '{"qry_tp":"1","dmst_stex_tp":"KRX"}'
-
-# 판단 담당에게는 그 파일이 없다 → 여기서 멈춘다
-KIWOOM_AUTH_ENV=~/.hermes/profiles/ada/kiwoom-mock.env $SKILL/kiwoom_api.sh ...
-# ERROR: 자격증명 파일 없음: /Users/…/ada/kiwoom-mock.env
-```
 
 파일이 없으면 **호출 자체가 시작되지 않는다.** 권한을 안 준 일은 실수로도 못 하게 된다.
 토큰 캐시도 자격증명 파일 경로별로 갈라지므로 프로필끼리 토큰을 공유하지 않는다.
@@ -94,8 +86,11 @@ KIWOOM_AUTH_ENV=~/.hermes/profiles/ada/kiwoom-mock.env $SKILL/kiwoom_api.sh ...
 
 ## 상세 레퍼런스
 
+- `scripts/kiwoom.py` — 호출 래퍼 (표준 라이브러리만)
 - `references/api-reference.md` — 검증된 TR 목록, 파라미터, 응답 필드, 실측 함정
 - `references/safety.md` — 주문 안전 게이트, 상태 머신, 승인 화면 항목
+
+> ℹ️ 스크립트가 **Python 인 이유** — `hermes skills install` 은 셸 스크립트(`.sh`)를 배포에 포함하지 않는다(실측 2026-08-06). 셸로 쓰면 설치했을 때 `scripts/` 가 통째로 빠진다.
 
 ## 트러블슈팅
 
