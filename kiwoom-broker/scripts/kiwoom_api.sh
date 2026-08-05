@@ -61,23 +61,27 @@ EOF
     ;;
 esac
 
-source_base_url() {
-  local env_file
-  if [ -n "${KIWOOM_AUTH_ENV:-}" ]; then
-    env_file="$KIWOOM_AUTH_ENV"
-  else
-    case "$PROFILE" in
-      mock) env_file="$HOME/.claude/auth/kiwoom-mock.env" ;;
-      real) env_file="$HOME/.claude/auth/kiwoom.env" ;;
-      *) echo "ERROR: 프로필은 mock 또는 real" >&2; exit 1 ;;
-    esac
-  fi
-  [ -f "$env_file" ] || { echo "ERROR: 자격증명 파일 없음: $env_file" >&2; exit 1; }
-  # shellcheck disable=SC1090
-  source "$env_file"
-  echo "$KIWOOM_API_BASE_URL"
+# 서버 주소 결정 — 토큰 스크립트와 같은 우선순위를 따른다
+# (환경 → KIWOOM_AUTH_ENV → 프로필 .env → 로컬 폴백 → 프로필 기본값)
+resolve_base_url() {
+  [ -n "${KIWOOM_API_BASE_URL:-}" ] && { echo "$KIWOOM_API_BASE_URL"; return; }
+  local candidate
+  for candidate in \
+    "${KIWOOM_AUTH_ENV:-}" \
+    "${HERMES_HOME:+$HERMES_HOME/.env}" \
+    "$HOME/.claude/auth/$([ "$PROFILE" = real ] && echo kiwoom || echo kiwoom-mock).env"
+  do
+    [ -n "$candidate" ] && [ -f "$candidate" ] || continue
+    # shellcheck disable=SC1090
+    source "$candidate"
+    [ -n "${KIWOOM_API_BASE_URL:-}" ] && { echo "$KIWOOM_API_BASE_URL"; return; }
+  done
+  case "$PROFILE" in
+    real) echo "https://api.kiwoom.com" ;;
+    *)    echo "https://mockapi.kiwoom.com" ;;
+  esac
 }
-BASE_URL="$(source_base_url)"
+BASE_URL="$(resolve_base_url)"
 
 call() {
   local token="$1"

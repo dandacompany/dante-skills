@@ -1,6 +1,6 @@
 ---
 name: kiwoom-broker
-description: 키움증권 REST API 연동 스킬. 모의투자(mockapi)를 기본으로 국내 주식·ETF의 시세와 일봉 차트, 계좌 평가잔고를 조회하고, 주문 계열은 명시적 확인 플래그가 있어야만 실행되는 안전 래퍼를 제공한다. 인증은 ~/.claude/auth/kiwoom-mock.env(모의)와 kiwoom.env(실전)에서 프로필별로 로드하고 토큰은 프로필별 캐시로 재사용한다. 트리거 - "키움", "키움증권", "kiwoom", "모의투자 시세", "모의투자 잔고", "국내 주식 일봉" 등 키움 REST API 관련 요청 시 사용.
+description: 키움증권 REST API 연동 스킬. 모의투자(mockapi)를 기본으로 국내 주식·ETF의 시세와 일봉 차트, 계좌 평가잔고를 조회하고, 주문 계열은 명시적 확인 플래그가 있어야만 실행되는 안전 래퍼를 제공한다. 자격증명은 Hermes 프로필 .env 나 Bitwarden·1Password 같은 SecretSource 로 주입된 환경변수를 그대로 쓰고, 토큰은 출처별 캐시로 재사용한다. 트리거 - "키움", "키움증권", "kiwoom", "모의투자 시세", "모의투자 잔고", "국내 주식 일봉" 등 키움 REST API 관련 요청 시 사용.
 ---
 
 # 키움증권 REST API (kiwoom-broker)
@@ -9,8 +9,7 @@ description: 키움증권 REST API 연동 스킬. 모의투자(mockapi)를 기�
 
 - 모의 서버 — `https://mockapi.kiwoom.com`
 - 실전 서버 — `https://api.kiwoom.com`
-- 인증 — Client Credentials. 모의는 `~/.claude/auth/kiwoom-mock.env`, 실전은 `~/.claude/auth/kiwoom.env`
-- 자격증명 경로는 `KIWOOM_AUTH_ENV` 로 덮어쓸 수 있다 (아래 「키를 한 프로필에만」)
+- 인증 — Client Credentials. 자격증명은 **환경변수**로 받는다 (아래 「자격증명 넣는 법」)
 - 공식 문서 — https://openapi.kiwoom.com · 공식 저장소 https://github.com/Kiwoom-Securities/Kiwoom-REST-API
 
 ## ⚠️ 핵심 주의사항
@@ -86,7 +85,7 @@ KIWOOM_AUTH_ENV=~/.hermes/profiles/ada/kiwoom-mock.env $SKILL/kiwoom_api.sh ...
 
 이 스킬은 조회를 편하게 해주지만 **주문 안전은 스킬 바깥에서 설계해야 한다.**
 
-- 판단하는 프로필과 주문을 집행하는 프로필을 나눈다. `KIWOOM_AUTH_ENV` 로 키 파일을 집행 프로필에만 준다(위 절)
+- 판단하는 프로필과 주문을 집행하는 프로필을 나눈다. **키는 집행 프로필의 `.env` 에만** 넣는다(위 절)
 - 주문 직전에 사람이 승인한다. 승인은 그 주문 내용에 한정된 1회용이다
 - 1회·1일 한도, 종목 허용 목록, 허용 시간을 코드로 강제한다
 - 결과는 응답 한 번으로 확정하지 말고 주문 조회로 대사한다
@@ -101,7 +100,8 @@ KIWOOM_AUTH_ENV=~/.hermes/profiles/ada/kiwoom-mock.env $SKILL/kiwoom_api.sh ...
 ## 트러블슈팅
 
 - `8001 App Key와 Secret Key 검증에 실패했습니다` — 키가 만료·해지됐다. 키움은 일정 기간 미사용 시 자동 해지하므로 포털에서 재발급한다. 모의는 상시모의투자 참가신청도 함께 확인한다.
-- `프로필과 서버가 어긋난다` — env 파일의 `KIWOOM_API_BASE_URL` 이 프로필과 맞지 않다. mock 은 `mockapi.kiwoom.com`, real 은 `api.kiwoom.com`.
+- `프로필과 서버가 어긋난다` — `KIWOOM_API_BASE_URL` 이 프로필과 맞지 않다. mock 은 `mockapi.kiwoom.com`, real 은 `api.kiwoom.com`.
+- `키움 자격증명을 찾지 못했습니다` — 위 네 곳 어디에도 키가 없다. 프로필 `.env` 에 넣는 것이 가장 확실하다. **다른 프로필에서는 일부러 안 보이게 한 것일 수도 있다**(키를 가진 프로필을 좁히는 설계).
 - 429 — 래퍼가 지수 백오프로 재시도한다. 반복되면 호출 간격을 늘린다. 조회는 TR당 초당 1건 수준이 안전하다.
 - 조회는 되는데 필드가 전부 빈 문자열 — 종목코드를 확인한다. 없는 종목도 정상 응답으로 온다(주의사항 4).
 - `모의투자 해당조회내역이 없습니다` — 오류가 아니다. 보유 종목이 0이라는 뜻이고 `return_code` 는 0이다.

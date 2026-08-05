@@ -21,36 +21,65 @@ while [ $# -gt 0 ]; do
   esac
 done
 
-# 자격증명 파일 위치. KIWOOM_AUTH_ENV 로 덮어쓸 수 있다 —
-# 에이전트 프로필마다 다른 파일을 가리키게 해서 "키를 가진 프로필"을 하나로 좁히는 용도.
-if [ -n "${KIWOOM_AUTH_ENV:-}" ]; then
-  AUTH_ENV="$KIWOOM_AUTH_ENV"
+# ── 자격증명 로딩 ────────────────────────────────────────────────
+# 우선순위:
+#   1. 이미 환경에 있으면 그대로 쓴다
+#      (Hermes 프로필 .env / SecretSource(Bitwarden·1Password) 가 주입한 경우)
+#   2. KIWOOM_AUTH_ENV 로 지정한 파일
+#   3. 프로필 .env  ($HERMES_HOME/.env)
+#   4. ~/.claude/auth/*.env  (로컬 개발 편의. 녹화·수강생 환경에서는 쓰지 않는다)
+AUTH_SOURCE=""
+if [ -n "${KIWOOM_REST_API_KEY:-}" ] && [ -n "${KIWOOM_REST_API_SECRET:-}" ]; then
+  AUTH_SOURCE="env"
 else
-  case "$PROFILE" in
-    mock) AUTH_ENV="$HOME/.claude/auth/kiwoom-mock.env" ;;
-    real) AUTH_ENV="$HOME/.claude/auth/kiwoom.env" ;;
-    *) echo "ERROR: 프로필은 mock 또는 real 이어야 한다 (받은 값: $PROFILE)" >&2; exit 1 ;;
-  esac
+  for candidate in \
+    "${KIWOOM_AUTH_ENV:-}" \
+    "${HERMES_HOME:+$HERMES_HOME/.env}" \
+    "$HOME/.claude/auth/$([ "$PROFILE" = real ] && echo kiwoom || echo kiwoom-mock).env"
+  do
+    [ -n "$candidate" ] && [ -f "$candidate" ] || continue
+    # set -a: 이 구간에서 정의되는 변수를 자동 export 한다.
+    # export 하지 않으면 아래 python3 서브프로세스가 값을 못 본다.
+    set -a
+    # shellcheck disable=SC1090
+    source "$candidate"
+    set +a
+    AUTH_SOURCE="$candidate"
+    break
+  done
 fi
 
-# 캐시는 자격증명 파일 경로별로 분리한다(같은 파일을 쓰는 곳끼리만 토큰을 공유)
-CACHE_TAG="$(printf '%s' "$AUTH_ENV" | shasum | cut -c1-8)"
-CACHE="${KIWOOM_TOKEN_CACHE:-$HOME/.claude/auth/.kiwoom_${PROFILE}_${CACHE_TAG}_token_cache.json}"
-EXPIRY_MARGIN=600   # 만료 10분 전부터 재발급
+if [ -z "$AUTH_SOURCE" ]; then
+  cat >&2 <<EOF
+ERROR: 키움 자격증명을 찾지 못했습니다.
 
-[ -f "$AUTH_ENV" ] || { echo "ERROR: $AUTH_ENV 없음" >&2; exit 1; }
-# shellcheck disable=SC1090
-source "$AUTH_ENV"
+  아래 중 하나로 주세요.
+    1) Hermes 프로필 .env 에 넣기 (권장)
+       ~/.hermes/profiles/<프로필>/.env
+         KIWOOM_REST_API_KEY=...
+         KIWOOM_REST_API_SECRET=...
+         KIWOOM_API_BASE_URL=https://mockapi.kiwoom.com
+    2) Bitwarden·1Password 등 SecretSource 로 주입 (Hermes v0.19.0+)
+    3) KIWOOM_AUTH_ENV=/경로/.env 로 파일 지정
+EOF
+  exit 1
+fi
+
 : "${KIWOOM_REST_API_KEY:?KIWOOM_REST_API_KEY 미설정}"
 : "${KIWOOM_REST_API_SECRET:?KIWOOM_REST_API_SECRET 미설정}"
-: "${KIWOOM_API_BASE_URL:?KIWOOM_API_BASE_URL 미설정}"
+# 서버 주소가 없으면 프로필 기본값. 모의가 기본이다.
+if [ -z "${KIWOOM_API_BASE_URL:-}" ]; then
+  case "$PROFILE" in
+    real) KIWOOM_API_BASE_URL="https://api.kiwoom.com" ;;
+    *)    KIWOOM_API_BASE_URL="https://mockapi.kiwoom.com" ;;
+  esac
+fi
+export KIWOOM_REST_API_KEY KIWOOM_REST_API_SECRET KIWOOM_API_BASE_URL
 
-# 안전장치: real 프로필인데 base_url 이 모의 서버이거나 그 반대인 경우 중단
-case "$PROFILE:$KIWOOM_API_BASE_URL" in
-  mock:*mockapi.kiwoom.com*) : ;;
-  real:*//api.kiwoom.com*)   : ;;
-  *) echo "ERROR: 프로필($PROFILE)과 서버($KIWOOM_API_BASE_URL)가 어긋난다. env 파일을 확인할 것" >&2; exit 1 ;;
-esac
+# 캐시는 자격증명 출처별로 분리한다(같은 키를 쓰는 곳끼리만 토큰을 공유)
+CACHE_TAG="$(printf '%s|%s' "$AUTH_SOURCE" "$KIWOOM_API_BASE_URL" | shasum | cut -c1-8)"
+CACHE="${KIWOOM_TOKEN_CACHE:-${TMPDIR:-/tmp}/.kiwoom_${PROFILE}_${CACHE_TAG}_token.json}"
+EXPIRY_MARGIN=600   # 만료 10분 전부터 재발급
 
 cache_valid() {
   [ -f "$CACHE" ] || return 1
