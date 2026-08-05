@@ -21,13 +21,21 @@ while [ $# -gt 0 ]; do
   esac
 done
 
-case "$PROFILE" in
-  mock) AUTH_ENV="$HOME/.claude/auth/kiwoom-mock.env" ;;
-  real) AUTH_ENV="$HOME/.claude/auth/kiwoom.env" ;;
-  *) echo "ERROR: 프로필은 mock 또는 real 이어야 한다 (받은 값: $PROFILE)" >&2; exit 1 ;;
-esac
+# 자격증명 파일 위치. KIWOOM_AUTH_ENV 로 덮어쓸 수 있다 —
+# 에이전트 프로필마다 다른 파일을 가리키게 해서 "키를 가진 프로필"을 하나로 좁히는 용도.
+if [ -n "${KIWOOM_AUTH_ENV:-}" ]; then
+  AUTH_ENV="$KIWOOM_AUTH_ENV"
+else
+  case "$PROFILE" in
+    mock) AUTH_ENV="$HOME/.claude/auth/kiwoom-mock.env" ;;
+    real) AUTH_ENV="$HOME/.claude/auth/kiwoom.env" ;;
+    *) echo "ERROR: 프로필은 mock 또는 real 이어야 한다 (받은 값: $PROFILE)" >&2; exit 1 ;;
+  esac
+fi
 
-CACHE="$HOME/.claude/auth/.kiwoom_${PROFILE}_token_cache.json"
+# 캐시는 자격증명 파일 경로별로 분리한다(같은 파일을 쓰는 곳끼리만 토큰을 공유)
+CACHE_TAG="$(printf '%s' "$AUTH_ENV" | shasum | cut -c1-8)"
+CACHE="${KIWOOM_TOKEN_CACHE:-$HOME/.claude/auth/.kiwoom_${PROFILE}_${CACHE_TAG}_token_cache.json}"
 EXPIRY_MARGIN=600   # 만료 10분 전부터 재발급
 
 [ -f "$AUTH_ENV" ] || { echo "ERROR: $AUTH_ENV 없음" >&2; exit 1; }

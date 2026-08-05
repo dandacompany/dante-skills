@@ -10,6 +10,7 @@ description: 키움증권 REST API 연동 스킬. 모의투자(mockapi)를 기�
 - 모의 서버 — `https://mockapi.kiwoom.com`
 - 실전 서버 — `https://api.kiwoom.com`
 - 인증 — Client Credentials. 모의는 `~/.claude/auth/kiwoom-mock.env`, 실전은 `~/.claude/auth/kiwoom.env`
+- 자격증명 경로는 `KIWOOM_AUTH_ENV` 로 덮어쓸 수 있다 (아래 「키를 한 프로필에만」)
 - 공식 문서 — https://openapi.kiwoom.com · 공식 저장소 https://github.com/Kiwoom-Securities/Kiwoom-REST-API
 
 ## ⚠️ 핵심 주의사항
@@ -64,11 +65,28 @@ $SKILL/kiwoom_api.sh --confirm-order kt10000 /api/dostk/ordr '{...}'
 - `dmst_stex_tp` 는 거래소 구분 — `KRX` · `NXT` · `SOR`
 - **주문 응답을 못 받았다고 재주문하지 않는다.** 주문 조회로 이미 나갔는지부터 확인한다
 
+## 키를 한 프로필에만 두기
+
+여러 에이전트가 같은 저장소에서 일할 때, **키를 가진 쪽을 하나로 좁히는 것**이 가장 단순한 사고 예방이다.
+`KIWOOM_AUTH_ENV` 로 자격증명 파일 경로를 프로필마다 다르게 준다.
+
+```bash
+# 집행 담당만 키를 갖는다
+KIWOOM_AUTH_ENV=~/.hermes/profiles/sam/kiwoom-mock.env   $SKILL/kiwoom_api.sh kt00018 /api/dostk/acnt '{"qry_tp":"1","dmst_stex_tp":"KRX"}'
+
+# 판단 담당에게는 그 파일이 없다 → 여기서 멈춘다
+KIWOOM_AUTH_ENV=~/.hermes/profiles/ada/kiwoom-mock.env $SKILL/kiwoom_api.sh ...
+# ERROR: 자격증명 파일 없음: /Users/…/ada/kiwoom-mock.env
+```
+
+파일이 없으면 **호출 자체가 시작되지 않는다.** 권한을 안 준 일은 실수로도 못 하게 된다.
+토큰 캐시도 자격증명 파일 경로별로 갈라지므로 프로필끼리 토큰을 공유하지 않는다.
+
 ## 안전 경계 — 에이전트에게 맡길 때
 
 이 스킬은 조회를 편하게 해주지만 **주문 안전은 스킬 바깥에서 설계해야 한다.**
 
-- 판단하는 프로필과 주문을 집행하는 프로필을 나눈다. `.env` 는 집행 프로필만 갖는다
+- 판단하는 프로필과 주문을 집행하는 프로필을 나눈다. `KIWOOM_AUTH_ENV` 로 키 파일을 집행 프로필에만 준다(위 절)
 - 주문 직전에 사람이 승인한다. 승인은 그 주문 내용에 한정된 1회용이다
 - 1회·1일 한도, 종목 허용 목록, 허용 시간을 코드로 강제한다
 - 결과는 응답 한 번으로 확정하지 말고 주문 조회로 대사한다

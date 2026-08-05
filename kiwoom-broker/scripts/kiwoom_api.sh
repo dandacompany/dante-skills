@@ -12,6 +12,7 @@
 #
 # 동작:
 #   - 기본 프로필은 mock. real 은 -p real 을 명시해야 열린다
+#   - KIWOOM_AUTH_ENV 로 자격증명 파일 경로를 덮어쓸 수 있다 (프로필별 키 격리)
 #   - kiwoom_token.sh 캐시에서 토큰 자동 로드
 #   - 키움은 HTTP 200 + 본문 return_code 로 오류를 표현하므로 둘 다 검사한다
 #   - 인증 오류 시 토큰 1회 강제 재발급 후 재시도
@@ -62,11 +63,16 @@ esac
 
 source_base_url() {
   local env_file
-  case "$PROFILE" in
-    mock) env_file="$HOME/.claude/auth/kiwoom-mock.env" ;;
-    real) env_file="$HOME/.claude/auth/kiwoom.env" ;;
-    *) echo "ERROR: 프로필은 mock 또는 real" >&2; exit 1 ;;
-  esac
+  if [ -n "${KIWOOM_AUTH_ENV:-}" ]; then
+    env_file="$KIWOOM_AUTH_ENV"
+  else
+    case "$PROFILE" in
+      mock) env_file="$HOME/.claude/auth/kiwoom-mock.env" ;;
+      real) env_file="$HOME/.claude/auth/kiwoom.env" ;;
+      *) echo "ERROR: 프로필은 mock 또는 real" >&2; exit 1 ;;
+    esac
+  fi
+  [ -f "$env_file" ] || { echo "ERROR: 자격증명 파일 없음: $env_file" >&2; exit 1; }
   # shellcheck disable=SC1090
   source "$env_file"
   echo "$KIWOOM_API_BASE_URL"
