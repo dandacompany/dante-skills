@@ -12,7 +12,7 @@
 | `trends.revenue`                                  | 정확히 6     | 5년 history + 1년 estimate                 |
 | `trends.social`                                   | 정확히 4     | Instagram / TikTok / YouTube / Threads     |
 | `competitors`                                     | 정확히 4     | 본인 1행 (self: true) + 비교 3행           |
-| `factCheck`                                       | 정확히 8     | verified 5~6 · estimated 2~3 · flagged 0   |
+| `factCheck`                                       | 정확히 8     | verified 5~~6 · estimated 2~~3 · flagged 0 |
 
 ## 금지 표현 (페이지 어디에도 등장 금지)
 

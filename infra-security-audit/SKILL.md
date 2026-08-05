@@ -50,7 +50,7 @@ Produce, for every non-GREEN fix, a **diff or exact command preview** ("this fil
 
 - Execute GREEN fixes, then re-audit to confirm the score moved.
 - For YELLOW/RED: show diff → take a timestamped backup (e.g. `sshd_config.bak.<ts>`) → get explicit approval → apply → verify in a **new** session → roll back on failure.
-- **Self-lockout prevention is mandatory.** Before any firewall or SSH change, load `references/self-lockout.md` and follow it exactly. Core safeguards: allow SSH (and the Tailscale range) in ufw *before* `ufw enable`; put sshd changes in a low-numbered drop-in and verify a fresh login keeps working before committing; check `/etc/ssh/sshd_config.d/*.conf` ordering for the first-match trap.
+- **Self-lockout prevention is mandatory.** Before any firewall or SSH change, load `references/self-lockout.md` and follow it exactly. Core safeguards: allow SSH (and the Tailscale range) in ufw _before_ `ufw enable`; put sshd changes in a low-numbered drop-in and verify a fresh login keeps working before committing; check `/etc/ssh/sshd_config.d/*.conf` ordering for the first-match trap.
 
 ## Safety Rules (always)
 

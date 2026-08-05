@@ -121,7 +121,7 @@ rm -rf "$APP" && mkdir -p "$APP" && cd "$APP"
 - **메타 disclaimer 절대 금지** — "데이터가 아직 분석 안 됨", "원문 페이지 재확인 전까지", "추정치 / 부분 데이터" 같은 표기 없음
 - **모든 슬롯을 채운다** — KPI 4, Insight 5, SWOT 각 사분면 3 (총 12), 차트 serp 12점 / priceDist 5 / revenue 6 / social 4, competitors 4, factCheck 8
 - **사실 기반 더미** — 공식 IR, 보도자료, Bright Data 데이터셋에서 실제 확인 가능한 수치만. 시청자가 검증해도 실제 값 ±10% 이내.
-- **factCheck status 분포** — verified 5~6 · estimated 2~3 · flagged 0. status badge 는 dl-badge-rust / dl-badge-amber / dl-badge-slate 순.
+- **factCheck status 분포** — verified 5~~6 · estimated 2~~3 · flagged 0. status badge 는 dl-badge-rust / dl-badge-amber / dl-badge-slate 순.
 
 ### 7. 빌드 → Vercel deploy
 

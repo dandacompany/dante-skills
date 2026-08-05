@@ -74,7 +74,6 @@ hermes skills install dandacompany/dante-skills/<skill-name>
 | --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
 | [brightdata-guide](./brightdata-guide/) | Bright Data 웹 수집 가이드(MCP + CLI 통합). MCP 도구가 있으면 MCP를, 없으면 터미널의 `bdata`/`brightdata` CLI로 검색·스크랩·구조화 추출. Hermes·Codex 등 범용. | `skills add dandacompany/dante-skills@brightdata-guide`<br>`hermes skills install dandacompany/dante-skills/brightdata-guide` |
 | [tally-api](./tally-api/)               | Tally.so 폼 플랫폼 REST API·웹훅 연동. 폼·제출·분석·워크스페이스 조회 및 웹훅 생성/서명검증. curl CLI 래퍼(`tally.sh`) + HMAC-SHA256 서명 검증 스크립트 동봉.  | `skills add dandacompany/dante-skills@tally-api`<br>`hermes skills install dandacompany/dante-skills/tally-api`               |
-| [kiwoom-broker](./kiwoom-broker/)       | 키움증권 REST API 연동. **모의투자가 기본 프로필**이고 실전은 명시적으로 열어야 하며, 주문 계열은 `--confirm-order` 없이 거부된다. 토큰 프로필별 캐시·429 백오프·`return_code` 검사 내장. 검증된 TR 레퍼런스와 주문 안전 게이트 문서 동봉. | `skills add dandacompany/dante-skills@kiwoom-broker`<br>`hermes skills install dandacompany/dante-skills/kiwoom-broker`       |
 
 ### 🎵 음악 · 미디어 생성
 

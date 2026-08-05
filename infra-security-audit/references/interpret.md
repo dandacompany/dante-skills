@@ -39,7 +39,7 @@
 
 ## Lynis (있으면)
 
-- `Hardening index: NN` → 0~100 점수. 신선한 Ubuntu가 50~60대. "올려가는 게임"으로 제시.
+- `Hardening index: NN` → 0~~100 점수. 신선한 Ubuntu가 50~~60대. "올려가는 게임"으로 제시.
 - `WARNINGS` → [즉시] 후보, `SUGGESTIONS` → [권장] 후보. 우리 스코프(SSH·방화벽·네트워크)만 필터.
 - 근거는 `lynis show details <TEST-ID>`.
 

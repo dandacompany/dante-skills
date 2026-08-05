@@ -7,6 +7,7 @@
 ufw를 켜는 순간 허용 규칙에 없는 포트는 즉시 차단된다. SSH가 빠지면 그대로 잠긴다.
 
 방어:
+
 1. enable **전에** `ufw allow OpenSSH`(또는 실제 SSH 포트)와 Tailscale 대역을 먼저 넣는다.
 2. 현재 규칙에 SSH 허용이 있는지 선검증 후 diff 제시.
 3. 승인받고 `ufw --force enable`.
@@ -16,6 +17,7 @@ ufw를 켜는 순간 허용 규칙에 없는 포트는 즉시 차단된다. SSH�
 `PasswordAuthentication no`를 키가 배치 안 된 상태에서 켜거나, 오타·잘못된 지시문이 있으면 다음 접속부터 잠긴다.
 
 방어 절차(순서 엄수):
+
 1. **키 로그인이 실제로 되는지 먼저 확인**(현재 세션이 키 기반인지).
 2. 변경은 메인 파일이 아니라 **drop-in**(`/etc/ssh/sshd_config.d/00-hardening.conf`)으로.
 3. `sshd -t` 문법 검사.
@@ -29,6 +31,7 @@ ufw를 켜는 순간 허용 규칙에 없는 포트는 즉시 차단된다. SSH�
 `/etc/ssh/sshd_config.d/*.conf`는 이름 번호 순으로 로드되고 sshd는 **먼저 읽은 값이 우선**이다. Ubuntu는 `50-cloud-init.conf`에 `PasswordAuthentication yes`를 박아둔다. 그래서 `99-hardening.conf`로 만들면 `50-`이 이겨 안 꺼진다.
 
 방어:
+
 - 하드닝 drop-in은 **더 낮은 번호**(`00-hardening.conf`)로 만들어 먼저 읽히게 한다.
 - 변경 후 반드시 **실효값**을 `sshd -T`로 확인(파일에 썼다고 적용된 게 아니다).
 - `Include` 지시문 위치도 본다(메인 파일의 Include가 drop-in보다 뒤면 메인 값이 이긴다).

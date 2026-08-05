@@ -68,18 +68,18 @@ When the task ends, record it — this is how the advisor learns.
 
 Reason from the task shape, not from fixed prices.
 
-| Task shape | Start with | Why |
-|---|---|---|
-| Formal, verifiable, high-volume (extract, reconcile, convert) | **economy tier · Medium** | Quality holds when the task is formal; only cost differs, so pick the cheapest that passes. |
-| Judgment / analysis, mid failure cost | **balanced tier · High** | Effort helps up to a point; the balanced tier is usually enough. |
-| Human-reviewed draft (slides, docs) | **economy tier · High → human finishes** | Cheap first pass, human does the last mile. |
-| Complex build, mid–high failure cost (apps, simulations, media) | **balanced tier · Max** | The balanced tier at high effort often matches the frontier tier's quality for far less; the frontier tier rarely justifies its cost here. |
-| Deep knowledge / physics / architecture | **frontier tier · High** | This is where model size genuinely decides the outcome. Stay at High. |
-| High failure cost / one correct answer (migration, security) | **frontier tier · High**, escalate to Max on failure | Buy a safety margin. Still not Ultra by default. |
+| Task shape                                                      | Start with                                           | Why                                                                                                                                        |
+| --------------------------------------------------------------- | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| Formal, verifiable, high-volume (extract, reconcile, convert)   | **economy tier · Medium**                            | Quality holds when the task is formal; only cost differs, so pick the cheapest that passes.                                                |
+| Judgment / analysis, mid failure cost                           | **balanced tier · High**                             | Effort helps up to a point; the balanced tier is usually enough.                                                                           |
+| Human-reviewed draft (slides, docs)                             | **economy tier · High → human finishes**             | Cheap first pass, human does the last mile.                                                                                                |
+| Complex build, mid–high failure cost (apps, simulations, media) | **balanced tier · Max**                              | The balanced tier at high effort often matches the frontier tier's quality for far less; the frontier tier rarely justifies its cost here. |
+| Deep knowledge / physics / architecture                         | **frontier tier · High**                             | This is where model size genuinely decides the outcome. Stay at High.                                                                      |
+| High failure cost / one correct answer (migration, security)    | **frontier tier · High**, escalate to Max on failure | Buy a safety margin. Still not Ultra by default.                                                                                           |
 
 ## Effort has a ceiling — a core principle
 
-Reasoning effort shows **diminishing returns**, and past a point more effort can *hurt*:
+Reasoning effort shows **diminishing returns**, and past a point more effort can _hurt_:
 
 - **Over-fitting to the letter of the spec** instead of its intent — optimizing to pass the check rather than to do the work well (reward hacking / benchmark gaming).
 - **Runaway self-polishing** after the result is already acceptable — cost and wall-clock explode with no quality gain.
@@ -93,14 +93,14 @@ Consequences for choosing effort:
 
 ## Failure diagnosis — pick the right fix
 
-| Symptom | Likely cause | Fix |
-|---|---|---|
-| Wrong or shallow at low effort | not enough deliberation | **raise effort one step** (same tier first) |
-| **Still wrong at High effort** | intelligence ceiling reached | **raise the model tier — not the effort** |
-| Games the check / literal-but-wrong (worse the higher the effort) | over-optimization | **lower effort and sharpen the spec / strengthen the check** |
-| Passed but keeps polishing; time and cost balloon (top effort) | no stop condition | **drop to a bounded effort and state a clear Definition-of-Done** |
-| Quality is fine but too slow or expensive | over-provisioned | **lower the tier and/or effort** |
-| Delegates but no added insight | delegation overhead | **avoid the top effort; use a focused High run** |
+| Symptom                                                           | Likely cause                 | Fix                                                               |
+| ----------------------------------------------------------------- | ---------------------------- | ----------------------------------------------------------------- |
+| Wrong or shallow at low effort                                    | not enough deliberation      | **raise effort one step** (same tier first)                       |
+| **Still wrong at High effort**                                    | intelligence ceiling reached | **raise the model tier — not the effort**                         |
+| Games the check / literal-but-wrong (worse the higher the effort) | over-optimization            | **lower effort and sharpen the spec / strengthen the check**      |
+| Passed but keeps polishing; time and cost balloon (top effort)    | no stop condition            | **drop to a bounded effort and state a clear Definition-of-Done** |
+| Quality is fine but too slow or expensive                         | over-provisioned             | **lower the tier and/or effort**                                  |
+| Delegates but no added insight                                    | delegation overhead          | **avoid the top effort; use a focused High run**                  |
 
 After suggesting a fix, record the retry's outcome to close the loop.
 

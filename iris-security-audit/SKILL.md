@@ -111,16 +111,16 @@ hermes doctor                        # 최상단 보안 섹션 — 공급망 이
 
 ### 이슈별 처리 매핑 (등급·방법)
 
-| 이슈 | 다리 | 등급 | 처리 |
-| --- | --- | --- | --- |
-| 환경 변수 파일 권한이 600 아님 | 데이터 | 🟢 | 주인만 읽기·쓰기로 잠금(`chmod 600` 적용) |
-| `approvals.mode`가 manual 아님 | 통로 | 🟡 | `hermes config set approvals.mode manual` |
-| `cron_mode`가 deny 아님 | 통로 | 🟡 | `hermes config set approvals.cron_mode deny` |
-| 안 쓰는 toolset이 켜져 있음 | 통로 | 🟡 | 해당 toolset 비활성(최소 권한) |
-| 키가 평문으로만 있고 금고 미사용 | 데이터 | 🟡 | `hermes secrets bitwarden setup` 으로 금고 연동 |
-| `terminal.backend`가 docker 아님 | 통로 | 🟡 | `hermes config set terminal.backend docker` (도커 설치 전제) |
-| 출처 불명·위험 판정 스킬 설치됨 | 콘텐츠 | 🔴 | 검토 후 `hermes skills uninstall <이름>` — 사람 확인 필수 |
-| API 서버 노출(0.0.0.0 바인딩·키 없음) | 통로 | 🔴 | 네트워크 노출 변경은 사람만 — 정확한 절차만 안내 |
-| 위임 시 자식이 부모 권한 전부 승계 | 통로 | 🔴 | 위임 권한 좁히기 설계는 사람 판단 — 안내 |
+| 이슈                                  | 다리   | 등급 | 처리                                                         |
+| ------------------------------------- | ------ | ---- | ------------------------------------------------------------ |
+| 환경 변수 파일 권한이 600 아님        | 데이터 | 🟢   | 주인만 읽기·쓰기로 잠금(`chmod 600` 적용)                    |
+| `approvals.mode`가 manual 아님        | 통로   | 🟡   | `hermes config set approvals.mode manual`                    |
+| `cron_mode`가 deny 아님               | 통로   | 🟡   | `hermes config set approvals.cron_mode deny`                 |
+| 안 쓰는 toolset이 켜져 있음           | 통로   | 🟡   | 해당 toolset 비활성(최소 권한)                               |
+| 키가 평문으로만 있고 금고 미사용      | 데이터 | 🟡   | `hermes secrets bitwarden setup` 으로 금고 연동              |
+| `terminal.backend`가 docker 아님      | 통로   | 🟡   | `hermes config set terminal.backend docker` (도커 설치 전제) |
+| 출처 불명·위험 판정 스킬 설치됨       | 콘텐츠 | 🔴   | 검토 후 `hermes skills uninstall <이름>` — 사람 확인 필수    |
+| API 서버 노출(0.0.0.0 바인딩·키 없음) | 통로   | 🔴   | 네트워크 노출 변경은 사람만 — 정확한 절차만 안내             |
+| 위임 시 자식이 부모 권한 전부 승계    | 통로   | 🔴   | 위임 권한 좁히기 설계는 사람 판단 — 안내                     |
 
 > 🔴 등급은 **절대 자동 실행하지 않는다.** 🟡은 되돌리는 법을 같이 안내한 뒤 동의를 받는다. 🟢만 즉시 실행하되 그래도 한 번은 "처리할까요?"로 확인한다.
