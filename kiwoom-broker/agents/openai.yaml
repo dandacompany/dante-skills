@@ -1,0 +1,4 @@
+interface:
+  display_name: "키움증권 공식 CLI"
+  short_description: "키움 공식 CLI로 모의 시세·잔고·주문 미리보기를 안전하게 실행합니다."
+  default_prompt: "키움증권 모의투자 계정에서 공식 kiwoomcli를 사용해 요청을 처리하고, 주문은 승인 전까지 미전송 상태로 유지해 주세요."
