@@ -9,8 +9,10 @@ description: 키움증권 공식 `kwcli`/`kiwoomcli`를 사용해 국내 ETF·�
 
 ## 실행 전 점검
 
+설치한 일반 터미널과 Hermes 세션의 PATH·HOME·Keyring은 다를 수 있다. 따라서 조회나 주문 전에 **현재 Hermes 세션 안에서** 아래 preflight를 수행한다.
+
 1. `command -v kiwoomcli`로 실행 파일을 찾는다.
-2. 없으면 `$HOME/.local/bin/kiwoomcli`를 확인한다.
+2. 없으면 `$HOME/.local/bin/kiwoomcli`가 실행 가능한지 확인한다. 이 폴백이 성공하면 해당 세션의 PATH 문제로 보고하고 절대 경로로 실행한다.
 3. 둘 다 없으면 실행하지 말고 다음 설치 명령을 안내한다.
 
    ```bash
@@ -18,8 +20,10 @@ description: 키움증권 공식 `kwcli`/`kiwoomcli`를 사용해 국내 ETF·�
    uv tool update-shell
    ```
 
-4. `kiwoomcli doctor`를 실행한다. 진단이 `지금 호출 가능: 예`가 아니면 조회나 주문으로 넘어가지 않는다.
-5. 강의 실습에서는 `demo`만 사용한다. `real` 전환은 사용자가 실계좌 사용을 명시적으로 요청하고 별도 운영 승인을 제공한 경우에만 검토한다.
+4. 초기 설정이 없다면 사용자가 직접 대화형 터미널에서 `kiwoomcli setup`을 실행하게 한다. setup은 **Hermes와 같은 호스트·같은 OS 사용자**에서 해야 한다. 강의 실습에서는 서버 `demo`, 계좌 별칭 `모의계좌`를 선택한다. App Key와 Secret은 OS 자격 증명 저장소에 보관하며 `.env` 파일을 만들지 않는다.
+5. setup이 `자격 증명 저장소 사용 불가`를 보고하면 지원되는 Keyring 백엔드가 없는 것이다. `.env`를 임의로 만들어 우회하지 말고 중단한 뒤 사용자에게 보고한다.
+6. `kiwoomcli auth status --profile 모의계좌`와 `kiwoomcli doctor`를 실행하고 다음만 요약한다: PATH 인식, profile, mode, 자격 증명 존재, 토큰 유효. 진단이 `지금 호출 가능: 예`가 아니면 조회나 주문으로 넘어가지 않는다.
+7. 강의 실습에서는 `demo` 프로필만 사용한다. `real` 전환은 사용자가 실계좌 사용을 명시적으로 요청하고 별도 운영 승인을 제공한 경우에만 검토한다.
 
 자격증명, 접근토큰, 계좌번호 원문을 출력하거나 로그에 남기지 않는다. 토큰 발급 엔드포인트를 직접 호출하지 않는다.
 
@@ -28,9 +32,9 @@ description: 키움증권 공식 `kwcli`/`kiwoomcli`를 사용해 국내 ETF·�
 항상 구조화된 출력을 요청하고, 원문 전체를 그대로 재출력하지 말고 요청에 필요한 필드만 요약한다.
 
 ```bash
-kiwoomcli domestic etfs info --code 069500 --mode demo --format json
-kiwoomcli domestic candles daily --code 069500 --date YYYYMMDD --mode demo --format json
-kiwoomcli domestic accounts holdings --basis total --exchange KRX --mode demo --format json
+kiwoomcli domestic etfs info --code 069500 --profile 모의계좌 --format json
+kiwoomcli domestic candles daily --code 069500 --date YYYYMMDD --profile 모의계좌 --format json
+kiwoomcli domestic accounts holdings --basis total --exchange KRX --profile 모의계좌 --format json
 ```
 
 명령이나 옵션을 확신할 수 없으면 추정하지 말고 먼저 찾는다.
@@ -56,7 +60,7 @@ kiwoomcli domestic orders buy \
   --qty 1 \
   --price 90000 \
   --order-type limit \
-  --mode demo \
+  --profile 모의계좌 \
   --format json
 ```
 
@@ -69,7 +73,7 @@ CLI가 `주문은 아직 전송되지 않았습니다`라고 확인한 경우에
 - 사용자가 방금 제시한 주문 초안을 명시적으로 승인했다.
 - 승인 대상의 종목·수량·가격·주문 유형·모드가 미리보기와 동일하다.
 - 상위 하네스가 요구하는 `OrderIntent`와 `ApprovalRecord`가 존재한다.
-- 모드는 `demo`다. 실계좌는 이 스킬의 강의 기본 범위가 아니다.
+- 인증 프로필은 `모의계좌`이고 서버는 `demo`다. 실계좌는 이 스킬의 강의 기본 범위가 아니다.
 
 하나라도 다르면 집행하지 않는다. 승인 뒤 입력이 달라졌다면 새 미리보기를 만들고 다시 승인받는다.
 
