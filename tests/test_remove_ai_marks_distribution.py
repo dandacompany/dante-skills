@@ -86,6 +86,17 @@ class RemoveAiMarksDistributionTests(unittest.TestCase):
         self.assertIn("offline-prompt-only", result.stderr)
         self.assertEqual("Alpha fact 42.", source_after)
 
+    def test_skill_manifest_mentions_every_runtime_module(self) -> None:
+        skill_text = (SKILL_ROOT / "SKILL.md").read_text(encoding="utf-8")
+        required = {
+            "scripts/common.py",
+            "scripts/container_meta.py",
+            "scripts/image_meta.py",
+            "scripts/text_unicode.py",
+        }
+        missing = sorted(path for path in required if path not in skill_text)
+        self.assertEqual([], missing, "unpublished helper modules: " + ", ".join(missing))
+
     def test_truncated_png_is_rejected_without_output(self) -> None:
         data = PNG_SIG + struct.pack(">I", 100) + b"tEXt" + b"OpenAI"
         with tempfile.TemporaryDirectory() as tmp:

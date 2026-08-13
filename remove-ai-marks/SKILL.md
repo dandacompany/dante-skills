@@ -25,6 +25,10 @@ Read if needed:
 
 Scripts live in this skill’s `scripts/` directory. Resolve `SCRIPTS` to that folder (absolute path of this skill + `/scripts`).
 
+The entry points require these bundled runtime modules; package and retain all
+four files: `scripts/common.py`, `scripts/container_meta.py`,
+`scripts/image_meta.py`, and `scripts/text_unicode.py`.
+
 ```bash
 SCRIPTS="<skill_dir>/scripts"
 python3 "$SCRIPTS/inspect_file.py" ...
