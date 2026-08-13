@@ -65,9 +65,10 @@ hermes skills install dandacompany/dante-skills/<skill-name>
 
 ### ✍️ 글쓰기 · 윤문
 
-| 스킬                                  | 설명                                                                                                                                                                                                                                     | 설치                                                                                                                        |
-| ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| [humanize-korean](./humanize-korean/) | AI가 쓴 한글 글의 "AI 티"(번역투·기계적 병렬·관용구·피동 남용 등 10대 카테고리 40+ 패턴)를 탐지해 내용은 그대로 두고 문체·리듬만 자연스럽게 윤문. [epoko77-ai/im-not-ai](https://github.com/epoko77-ai/im-not-ai) fast-path 에디션(MIT). | `skills add dandacompany/dante-skills@humanize-korean`<br>`hermes skills install dandacompany/dante-skills/humanize-korean` |
+| 스킬                                      | 설명                                                                                                                                                                                                                                     | 설치                                                                                                                                |
+| ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| [humanize-korean](./humanize-korean/)     | AI가 쓴 한글 글의 "AI 티"(번역투·기계적 병렬·관용구·피동 남용 등 10대 카테고리 40+ 패턴)를 탐지해 내용은 그대로 두고 문체·리듬만 자연스럽게 윤문. [epoko77-ai/im-not-ai](https://github.com/epoko77-ai/im-not-ai) fast-path 에디션(MIT). | `skills add dandacompany/dante-skills@humanize-korean`<br>`hermes skills install dandacompany/dante-skills/humanize-korean`         |
+| [remove-ai-marks](./remove-ai-marks/)     | 소유하거나 처리 권한이 있는 텍스트·문서·이미지에서 숨은 Unicode, C2PA·EXIF·XMP, AI 생성기 메타데이터를 읽기 전용으로 탐지하고 선택적으로 정리. 원격 전송·외부 코드·대용량 입력을 제한한 보안 강화판(MIT).                | `skills add dandacompany/dante-skills@remove-ai-marks`<br>`hermes skills install dandacompany/dante-skills/remove-ai-marks`         |
 
 ### 🔌 데이터 수집 · API 연동
 
@@ -136,6 +137,22 @@ AI(ChatGPT·Claude·Gemini)가 쓴 한글 텍스트를 사람이 쓴 글처럼 �
 
 ```bash
 skills add dandacompany/dante-skills@humanize-korean -g -y --copy -a claude-code
+```
+
+### 🧽 remove-ai-marks
+
+자신이 소유하거나 처리 권한이 있는 텍스트·문서·이미지의 출처 표식과 메타데이터를 검사하고 정리하는 스킬입니다.
+
+- **Layer A 텍스트 검사** — zero-width·bidi·variation selector·이상 공백·선택적 homoglyph 탐지/정규화
+- **파일 메타데이터 검사** — PNG/JPEG/SVG/PDF/DOCX/ODT/HTML/Markdown의 C2PA·EXIF·XMP·AI 생성기 흔적
+- **통계적 텍스트 워터마크** — 공식 탐지 키 없이 확정 판정하지 않으며, 사용자가 원할 때만 의미 보존 rewrite를 제안
+- **안전 기본값** — 기본 입력 256 MiB 제한, 비루프백 rewrite는 HTTPS만 허용, redirect 차단, 응답 1 MiB 제한
+- **외부 코드 경계** — 선택형 reverse-SynthID scorer는 감사된 upstream origin과 고정 커밋만 허용
+
+원본은 [`guillaumemeyer/watermarks-remover`](https://github.com/guillaumemeyer/watermarks-remover)의 MIT 코드이며, 단테랩스 배포본은 감사 커밋 `f10efaa7`을 기준으로 보안 강화했습니다. 탐지 결과가 음성이라고 해서 사람이 작성한 콘텐츠라는 뜻은 아닙니다.
+
+```bash
+skills add dandacompany/dante-skills@remove-ai-marks -g -y --copy -a claude-code
 ```
 
 ### 📚 oh-my-wiki
