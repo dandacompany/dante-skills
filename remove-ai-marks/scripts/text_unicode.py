@@ -202,6 +202,16 @@ def _is_strip_cp(cp: int) -> bool:
     return False
 
 
+def _is_semantic_format_cp(cp: int) -> bool:
+    """Return True for format controls commonly required by real text rendering."""
+    return (
+        cp in (0x200C, 0x200D)
+        or 0x180B <= cp <= 0x180D
+        or 0xFE00 <= cp <= 0xFE0F
+        or cp in _VS_SUPPLEMENT
+    )
+
+
 def _strip_kind(cp: int) -> str:
     """Finer-grained inspect kind for strip-class codepoints."""
     if 0xE0001 <= cp <= 0xE007F:
@@ -309,6 +319,7 @@ def clean_text(
     *,
     nfkc: bool = False,
     aggressive_homoglyphs: bool = False,
+    aggressive_format_controls: bool = False,
     normalize_spaces: bool = True,
 ) -> tuple[str, dict]:
     """Return cleaned text and a stats dict."""
@@ -318,6 +329,9 @@ def clean_text(
 
     for ch in text:
         cp = ord(ch)
+        if _is_semantic_format_cp(cp) and not aggressive_format_controls:
+            out_chars.append(ch)
+            continue
         if _is_strip_cp(cp):
             removed[_char_label(ch)] += 1
             continue

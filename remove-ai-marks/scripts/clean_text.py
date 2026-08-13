@@ -25,6 +25,11 @@ def main() -> int:
         help="Map Cyrillic/fullwidth Latin confusables to ASCII Latin",
     )
     p.add_argument(
+        "--aggressive-format-controls",
+        action="store_true",
+        help="Also remove ZWJ/ZWNJ and variation selectors; may alter emoji or script shaping",
+    )
+    p.add_argument(
         "--no-normalize-spaces",
         action="store_true",
         help="Do not rewrite exotic spaces to U+0020",
@@ -42,6 +47,7 @@ def main() -> int:
         text,
         nfkc=args.nfkc,
         aggressive_homoglyphs=args.aggressive_homoglyphs,
+        aggressive_format_controls=args.aggressive_format_controls,
         normalize_spaces=not args.no_normalize_spaces,
     )
 

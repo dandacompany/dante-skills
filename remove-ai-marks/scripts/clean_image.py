@@ -29,12 +29,6 @@ def main() -> int:
         help="Only drop segments/chunks that look like C2PA/AI (less aggressive)",
     )
     p.add_argument("--json", action="store_true", help="JSON result on stdout")
-    p.add_argument(
-        "--synthid-dir",
-        type=str,
-        default=None,
-        help="reverse-SynthID checkout root for optional pixel SynthID scoring",
-    )
     args = p.parse_args()
 
     if not args.path.is_file():
@@ -54,7 +48,6 @@ def main() -> int:
             src,
             dest,
             strip_all_metadata=not args.keep_non_ai_metadata,
-            synthid_dir=args.synthid_dir,
         )
     except Exception as e:
         eprint(f"error: {e}")
@@ -66,20 +59,6 @@ def main() -> int:
         eprint(f"wrote {result['output']} ({result['bytes_in']} -> {result['bytes_out']})")
         for a in result["actions"]:
             eprint(f"  - {a}")
-        if result.get("synthid_before") and result["synthid_before"].get("available"):
-            label = "yes" if result["synthid_before"].get("is_watermarked") else "no"
-            eprint(
-                "SynthID before: "
-                f"confidence {result['synthid_before'].get('confidence', 0.0):.3f} "
-                f"(watermarked: {label})"
-            )
-        if result.get("synthid_after") and result["synthid_after"].get("available"):
-            label = "yes" if result["synthid_after"].get("is_watermarked") else "no"
-            eprint(
-                "SynthID after: "
-                f"confidence {result['synthid_after'].get('confidence', 0.0):.3f} "
-                f"(watermarked: {label})"
-            )
         if result["still_has_c2pa"] or result["still_has_ai_metadata"]:
             eprint("warning: residual C2PA/AI signals may remain")
             for f in result.get("post_findings") or []:

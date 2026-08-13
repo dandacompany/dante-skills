@@ -145,9 +145,11 @@ skills add dandacompany/dante-skills@humanize-korean -g -y --copy -a claude-code
 
 - **Layer A 텍스트 검사** — zero-width·bidi·variation selector·이상 공백·선택적 homoglyph 탐지/정규화
 - **파일 메타데이터 검사** — PNG/JPEG/SVG/PDF/DOCX/ODT/HTML/Markdown의 C2PA·EXIF·XMP·AI 생성기 흔적
+- **보존적 정리** — PDF는 검사 전용, DOCX `customXml`은 AI 표식이 확인된 part만 제거, ZWJ·ZWNJ·variation selector는 기본 보존
 - **통계적 텍스트 워터마크** — 공식 탐지 키 없이 확정 판정하지 않으며, 사용자가 원할 때만 의미 보존 rewrite를 제안
-- **안전 기본값** — 기본 입력 256 MiB 제한, 비루프백 rewrite는 HTTPS만 허용, redirect 차단, 응답 1 MiB 제한
-- **외부 코드 경계** — 선택형 reverse-SynthID scorer는 감사된 upstream origin과 고정 커밋만 허용
+- **안전 기본값** — 입력 256 MiB·stdin 64 MiB 고정 제한, 환경변수·자격증명 파일을 읽지 않음
+- **실행 경계** — 네트워크 호출, 외부 실행 파일, 외부 모델 코드, 저장소 자동 다운로드를 모두 제외
+- **오프라인 rewrite** — 의미 보존 rewrite 프롬프트만 생성하며 문서 내용을 외부로 전송하지 않음
 
 원본은 [`guillaumemeyer/watermarks-remover`](https://github.com/guillaumemeyer/watermarks-remover)의 MIT 코드이며, 단테랩스 배포본은 감사 커밋 `f10efaa7`을 기준으로 보안 강화했습니다. 탐지 결과가 음성이라고 해서 사람이 작성한 콘텐츠라는 뜻은 아닙니다.
 

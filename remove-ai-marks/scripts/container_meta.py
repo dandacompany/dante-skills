@@ -1,20 +1,19 @@
 """Inspect/clean AI provenance metadata in non-raster containers.
 
 Formats: SVG, PDF (best-effort), DOCX, ODT, HTML, Markdown frontmatter.
-Stdlib-first; PDF prefers optional exiftool/c2patool when present.
+Pure Python only; PDF cleaning is a best-effort XMP pass.
 """
 
 from __future__ import annotations
 
 import io
 import re
-import subprocess
 import zipfile
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
-from common import safe_arg, safe_write_bytes, safe_write_text, subprocess_rlimits, which
-from image_meta import AI_META_HINTS, C2PA_MARKERS, run_optional_tools
+from common import safe_write_bytes, safe_write_text
+from image_meta import AI_META_HINTS, C2PA_MARKERS
 
 # Frontmatter / meta keys that often carry AI provenance
 AI_FRONTMATTER_KEYS = frozenset(
@@ -437,11 +436,12 @@ def clean_docx(data: bytes) -> tuple[bytes, list[str]]:
             name = info.filename
             _check_zip_budget(info, budget)
             raw = zin.read(name)
-            # Drop entire customXml trees (often provenance injects)
+            # Remove only customXml parts that actually contain provenance markers.
             if name.startswith("customXml/"):
-                # Drop customXml — often used for provenance injects; body stays in word/
-                actions.append(f"drop part {name}")
-                continue
+                c2pa, ai, _ = _blob_hits(raw)
+                if c2pa or ai:
+                    actions.append(f"drop AI provenance part {name}")
+                    continue
             if name in DOCX_META_PARTS or name.startswith("docProps/"):
                 text = raw.decode("utf-8", errors="replace")
                 # Scrub known AI generator fields via simple regex on XML text nodes
@@ -605,66 +605,14 @@ def inspect_pdf(path: Path, data: bytes) -> tuple[bool, bool, list[str], dict]:
                 re.I,
             )
         )
-    tools = run_optional_tools(path)
-    ct = tools.get("c2patool") or {}
-    if ct.get("has_manifest"):
-        has_c2pa = True
-        findings.append("c2patool reports C2PA-related manifest")
-    return has_c2pa, has_ai or has_c2pa, findings, {"tools": tools}
+    del path
+    return has_c2pa, has_ai or has_c2pa, findings, {"tools": {}}
 
 
 def clean_pdf(path: Path, dest: Path) -> tuple[list[str], dict]:
-    """Best-effort PDF clean. Prefers exiftool; falls back to XMP strip warning."""
-    actions: list[str] = []
-    data = path.read_bytes()
-    dest.parent.mkdir(parents=True, exist_ok=True)
-
-    exiftool = which("exiftool")
-    if exiftool:
-        safe_write_bytes(dest, data)
-        try:
-            r = subprocess.run(
-                [
-                    exiftool,
-                    "-all=",
-                    "-overwrite_original",
-                    safe_arg(str(dest)),
-                ],
-                capture_output=True,
-                text=True,
-                timeout=60,
-                check=False,
-                preexec_fn=subprocess_rlimits,
-            )
-            actions.append(f"exiftool -all= (rc={r.returncode})")
-        except Exception as e:
-            actions.append(f"exiftool failed: {e}")
-        c2patool = which("c2patool")
-        # c2patool does not always strip; leave note
-        if c2patool:
-            actions.append("c2patool available for inspect; strip via exiftool/re-export")
-        return actions, {"mode": "exiftool"}
-
-    # Degraded: strip obvious XMP packets between <?xpacket begin and end
-    text = data
-    new, n = re.subn(
-        rb"<\?xpacket begin.*?<\?xpacket end[^?]*\?>",
-        b"",
-        text,
-        flags=re.I | re.DOTALL,
-    )
-    if n:
-        actions.append(f"stripped XMP xpacket x{n} (degraded; may leave offsets broken)")
-        # PDF structural risk: document degraded mode clearly
-        safe_write_bytes(dest, new)
-        actions.append("warning: pure-stdlib PDF strip is best-effort; prefer exiftool")
-        return actions, {"mode": "stdlib-xmp", "degraded": True}
-
-    safe_write_bytes(dest, data)
-    actions.append(
-        "no PDF cleaner available (install exiftool for reliable metadata strip); copied as-is"
-    )
-    return actions, {"mode": "copy", "degraded": True}
+    """Refuse PDF mutation because raw byte deletion can invalidate xref offsets."""
+    del path, dest
+    raise ValueError("PDF cleaning is inspection-only in this safe distribution")
 
 
 # ---------------------------------------------------------------------------
@@ -694,9 +642,6 @@ def inspect_container(path: Path) -> ContainerInspectReport:
         has_c2pa, has_ai, findings, details = inspect_markdown(text)
     else:
         has_c2pa, has_ai, findings = False, False, [f"unsupported container: {fmt}"]
-
-    if fmt in ("svg", "pdf", "docx") and not tools:
-        tools = run_optional_tools(path)
 
     return ContainerInspectReport(
         path=str(path),

@@ -17,19 +17,17 @@ def main() -> int:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("path", type=Path, help="Image path (PNG or JPEG)")
     p.add_argument("--json", action="store_true")
-    p.add_argument(
-        "--synthid-dir",
-        type=str,
-        default=None,
-        help="reverse-SynthID checkout root for optional pixel SynthID scoring",
-    )
     args = p.parse_args()
 
     if not args.path.is_file():
         print(f"not a file: {args.path}", file=sys.stderr)
         return 2
 
-    report = inspect_image(args.path, synthid_dir=args.synthid_dir)
+    try:
+        report = inspect_image(args.path)
+    except (OSError, ValueError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
     if args.json:
         emit_json(report.to_dict())
     else:
@@ -41,24 +39,6 @@ def main() -> int:
             print("Findings:")
             for f in report.findings:
                 print(f"  - {f}")
-        ct = report.tools.get("c2patool") or {}
-        print(f"c2patool: {'yes' if ct.get('available') else 'no'}")
-        et = report.tools.get("exiftool") or {}
-        print(f"exiftool: {'yes' if et.get('available') else 'no'}")
-        if et.get("interesting_lines"):
-            print("exiftool highlights:")
-            for line in et["interesting_lines"][:20]:
-                print(f"  {line}")
-        if report.synthid and report.synthid.get("available"):
-            label = "yes" if report.synthid.get("is_watermarked") else "no"
-            print(
-                "SynthID score: "
-                f"confidence {report.synthid.get('confidence', 0.0):.3f} "
-                f"(watermarked: {label})"
-            )
-        elif report.synthid and report.synthid.get("error"):
-            print(f"SynthID score: error: {report.synthid['error']}")
-
     return 0 if not (report.has_c2pa or report.has_ai_metadata) else 1
 
 

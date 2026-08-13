@@ -26,7 +26,7 @@ Layer A scripts only remove **Unicode / homoglyph** carriers. Layer B (rewrite) 
 
 - Signed **Content Credentials** on supported types (examples: `.png`, `.jpg`, `.svg`).
 - Tamper-evident while present; stripped by re-encode, metadata scrub, or many upload pipelines.
-- Inspect with `c2patool` when installed; strip via `clean_image.py` / `clean_file.py` / ExifTool.
+- Inspect and strip supported hard-bound metadata with the bundled pure-Python `clean_image.py` / `clean_file.py` paths.
 
 ## Caveats (Anthropic)
 

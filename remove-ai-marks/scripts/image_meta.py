@@ -2,20 +2,13 @@
 
 from __future__ import annotations
 
-import json
-import os
-import re
 import struct
-import subprocess
-import sys
 import zlib
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from common import require_input_size, safe_arg, safe_write_bytes, subprocess_rlimits, which
-
-SCRIPTS_DIR = Path(__file__).resolve().parent
+from common import require_input_size, safe_write_bytes
 
 PNG_SIG = b"\x89PNG\r\n\x1a\n"
 JPEG_SOI = b"\xff\xd8"
@@ -103,14 +96,14 @@ def inspect_png(data: bytes) -> tuple[bool, bool, list[str]]:
     if not data.startswith(PNG_SIG):
         return False, False, ["not a PNG"]
     pos = 8
+    saw_iend = False
     while pos + 8 <= len(data):
         length = struct.unpack(">I", data[pos : pos + 4])[0]
         ctype = data[pos + 4 : pos + 8]
         chunk_start = pos + 8
         chunk_end = chunk_start + length
         if chunk_end + 4 > len(data):
-            findings.append(f"truncated chunk {ctype!r}")
-            break
+            raise ValueError(f"truncated PNG chunk {ctype!r}")
         payload = data[chunk_start:chunk_end]
         name = ctype.decode("latin-1", errors="replace")
         # Private/ancillary chunks sometimes used for JUMBF/C2PA
@@ -125,8 +118,11 @@ def inspect_png(data: bytes) -> tuple[bool, bool, list[str]]:
                     has_c2pa = True
                 findings.append(f"PNG {name}: {', '.join(hits[:8])}")
         if ctype == b"IEND":
+            saw_iend = True
             break
         pos = chunk_end + 4  # skip CRC
+    if not saw_iend:
+        raise ValueError("truncated PNG: missing IEND chunk")
     # Whole-file scan fallback
     whole = _contains_any(data, C2PA_MARKERS)
     if whole and not has_c2pa:
@@ -143,6 +139,7 @@ def inspect_jpeg(data: bytes) -> tuple[bool, bool, list[str]]:
         return False, False, ["not a JPEG"]
     i = 2
     n = len(data)
+    saw_eoi = False
     while i + 4 <= n:
         if data[i] != 0xFF:
             i += 1
@@ -151,21 +148,31 @@ def inspect_jpeg(data: bytes) -> tuple[bool, bool, list[str]]:
         while i < n and data[i] == 0xFF:
             i += 1
         if i >= n:
-            break
+            raise ValueError("truncated JPEG marker")
         marker = data[i]
         i += 1
-        if marker in (0xD8, 0xD9):  # SOI/EOI
+        if marker == 0xD9:  # EOI
+            saw_eoi = True
+            break
+        if marker == 0xD8:  # SOI
             continue
         if marker == 0xDA:  # SOS — image data follows
+            if i + 2 > n:
+                raise ValueError("truncated JPEG SOS header")
+            seglen = struct.unpack(">H", data[i : i + 2])[0]
+            if seglen < 2 or i + seglen > n:
+                raise ValueError("truncated JPEG SOS segment")
+            if data.find(b"\xff\xd9", i + seglen) < 0:
+                raise ValueError("truncated JPEG: missing EOI after SOS")
+            saw_eoi = True
             break
         if marker >= 0xD0 and marker <= 0xD7:  # RSTn
             continue
         if i + 2 > n:
-            break
+            raise ValueError("truncated JPEG segment length")
         seglen = struct.unpack(">H", data[i : i + 2])[0]
         if seglen < 2 or i + seglen > n:
-            findings.append(f"bad segment length at marker 0x{marker:02X}")
-            break
+            raise ValueError(f"truncated JPEG segment at marker 0x{marker:02X}")
         payload = data[i + 2 : i + seglen]
         i += seglen
 
@@ -184,6 +191,9 @@ def inspect_jpeg(data: bytes) -> tuple[bool, bool, list[str]]:
                     has_c2pa = True
                 findings.append(f"JPEG APP{marker - 0xE0}: {', '.join(hits[:8])}")
 
+    if not saw_eoi:
+        raise ValueError("truncated JPEG: missing EOI marker")
+
     whole = _contains_any(data, C2PA_MARKERS)
     if whole and not has_c2pa:
         has_c2pa = True
@@ -191,118 +201,7 @@ def inspect_jpeg(data: bytes) -> tuple[bool, bool, list[str]]:
     return has_c2pa, has_ai or has_c2pa, findings
 
 
-def run_optional_tools(path: Path) -> dict[str, Any]:
-    tools: dict[str, Any] = {}
-    c2patool = which("c2patool")
-    if c2patool:
-        try:
-            r = subprocess.run(
-                [c2patool, safe_arg(str(path))],
-                capture_output=True,
-                text=True,
-                timeout=30,
-                preexec_fn=subprocess_rlimits,
-            )
-            out = (r.stdout or "") + (r.stderr or "")
-            low = out.lower()
-            # Negative markers must veto every positive branch, so the
-            # positive alternatives are parenthesised: c2patool reports a
-            # missing manifest as "Error: No claim found", which contains
-            # the substring "claim" and would otherwise read as a hit.
-            no_manifest = "no claim" in low or "no jumbf" in low
-            tools["c2patool"] = {
-                "available": True,
-                "returncode": r.returncode,
-                "snippet": out[:2000],
-                "has_manifest": (
-                    "claim" in low or "c2pa" in low or "manifest" in low
-                )
-                and not no_manifest,
-            }
-        except Exception as e:
-            tools["c2patool"] = {"available": True, "error": str(e)}
-    else:
-        tools["c2patool"] = {"available": False}
-
-    exiftool = which("exiftool")
-    if exiftool:
-        try:
-            r = subprocess.run(
-                [exiftool, "-G1", "-a", "-s", safe_arg(str(path))],
-                capture_output=True,
-                text=True,
-                timeout=30,
-                preexec_fn=subprocess_rlimits,
-            )
-            out = r.stdout or ""
-            interesting = [
-                line
-                for line in out.splitlines()
-                if re.search(
-                    r"c2pa|content.?credential|AIGC|digitalSource|XMP|EXIF|IPTC|jumb",
-                    line,
-                    re.I,
-                )
-            ]
-            tools["exiftool"] = {
-                "available": True,
-                "interesting_lines": interesting[:50],
-            }
-        except Exception as e:
-            tools["exiftool"] = {"available": True, "error": str(e)}
-    else:
-        tools["exiftool"] = {"available": False}
-    return tools
-
-
-def run_synthid_score(
-    path: Path,
-    upstream_dir: str | None = None,
-) -> dict[str, Any] | None:
-    """Run the optional reverse-SynthID scorer in a subprocess.
-
-    Returns None when the scorer is not configured or unavailable (exit 3),
-    so callers can keep the default "no SynthID score" behavior.
-    """
-    if upstream_dir is None:
-        upstream_dir = os.environ.get("REVERSE_SYNTHID_DIR")
-    if not upstream_dir:
-        return None
-
-    script = SCRIPTS_DIR / "score_synthid.py"
-    cmd = [
-        sys.executable,
-        str(script),
-        str(path),
-        "--upstream-dir",
-        str(upstream_dir),
-        "--json",
-    ]
-    try:
-        r = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            timeout=180,
-            preexec_fn=subprocess_rlimits,
-        )
-    except Exception as e:
-        return {"available": False, "error": str(e)}
-
-    if r.returncode == 3:
-        return None
-    if r.returncode != 0:
-        return {"available": False, "error": (r.stderr or "").strip()[:2000]}
-    try:
-        return json.loads(r.stdout or "{}")
-    except json.JSONDecodeError as e:
-        return {"available": False, "error": f"bad scorer JSON: {e}"}
-
-
-def inspect_image(
-    path: Path,
-    synthid_dir: str | None = None,
-) -> ImageInspectReport:
+def inspect_image(path: Path) -> ImageInspectReport:
     require_input_size(path)
     data = path.read_bytes()
     fmt = detect_format(data)
@@ -311,14 +210,7 @@ def inspect_image(
     elif fmt == "jpeg":
         has_c2pa, has_ai, findings = inspect_jpeg(data)
     else:
-        has_c2pa, has_ai, findings = False, False, ["unsupported format (MVP: PNG/JPEG)"]
-
-    tools = run_optional_tools(path)
-    # Elevate flags from tools
-    ct = tools.get("c2patool") or {}
-    if ct.get("has_manifest"):
-        has_c2pa = True
-        findings.append("c2patool reports a C2PA-related manifest")
+        raise ValueError("unsupported image format (expected PNG or JPEG)")
 
     return ImageInspectReport(
         path=str(path),
@@ -326,8 +218,8 @@ def inspect_image(
         has_c2pa=has_c2pa,
         has_ai_metadata=has_ai,
         findings=findings,
-        tools=tools,
-        synthid=run_synthid_score(path, synthid_dir),
+        tools={},
+        synthid=None,
     )
 
 
@@ -343,13 +235,14 @@ def strip_png(data: bytes, *, strip_all_text: bool = True) -> tuple[bytes, list[
     actions: list[str] = []
     out = bytearray(PNG_SIG)
     pos = 8
+    saw_iend = False
     while pos + 8 <= len(data):
         length = struct.unpack(">I", data[pos : pos + 4])[0]
         ctype = data[pos + 4 : pos + 8]
         chunk_start = pos + 8
         chunk_end = chunk_start + length
         if chunk_end + 4 > len(data):
-            break
+            raise ValueError(f"truncated PNG chunk {ctype!r}")
         payload = data[chunk_start:chunk_end]
         crc_bytes = data[chunk_end : chunk_end + 4]
         pos = chunk_end + 4
@@ -381,7 +274,10 @@ def strip_png(data: bytes, *, strip_all_text: bool = True) -> tuple[bytes, list[
         if not drop:
             out.extend(struct.pack(">I", length) + ctype + payload + crc_bytes)
         if ctype == b"IEND":
+            saw_iend = True
             break
+    if not saw_iend:
+        raise ValueError("truncated PNG: missing IEND chunk")
     if not actions:
         actions.append("no PNG metadata chunks removed (already clean or none matched)")
     return bytes(out), actions
@@ -394,21 +290,20 @@ def strip_jpeg(data: bytes, *, strip_all_app: bool = True) -> tuple[bytes, list[
     out = bytearray(JPEG_SOI)
     i = 2
     n = len(data)
+    saw_eoi = False
     while i < n:
         if data[i] != 0xFF:
-            # unexpected; copy rest
-            out.extend(data[i:])
-            actions.append("copied remainder after non-marker byte")
-            break
+            raise ValueError(f"truncated JPEG: unexpected byte at offset {i}")
         while i < n and data[i] == 0xFF:
             i += 1
         if i >= n:
-            break
+            raise ValueError("truncated JPEG marker")
         marker = data[i]
         i += 1
 
         if marker == 0xD9:  # EOI
             out.extend(b"\xff\xd9")
+            saw_eoi = True
             break
         if marker == 0xD8:  # nested SOI?
             continue
@@ -418,23 +313,27 @@ def strip_jpeg(data: bytes, *, strip_all_app: bool = True) -> tuple[bytes, list[
         if marker == 0xDA:  # SOS — copy through end
             # need length of SOS header then entropy-coded data to EOI
             if i + 2 > n:
-                break
+                raise ValueError("truncated JPEG SOS header")
             seglen = struct.unpack(">H", data[i : i + 2])[0]
+            if seglen < 2 or i + seglen > n:
+                raise ValueError("truncated JPEG SOS segment")
+            eoi = data.find(b"\xff\xd9", i + seglen)
+            if eoi < 0:
+                raise ValueError("truncated JPEG: missing EOI after SOS")
             # Find EOI from here carefully: after SOS segment header, scan for FF D9
             # not preceded by stuffed FF 00 issues — simple approach: copy from FF DA to end
             # Reconstruct: FF DA + rest of file
             out.extend(b"\xff\xda")
-            out.extend(data[i:])
-            actions.append("preserved entropy-coded scan (SOS→EOF)")
+            out.extend(data[i : eoi + 2])
+            actions.append("preserved entropy-coded scan through EOI")
+            saw_eoi = True
             break
 
         if i + 2 > n:
-            break
+            raise ValueError("truncated JPEG segment length")
         seglen = struct.unpack(">H", data[i : i + 2])[0]
         if seglen < 2 or i + seglen > n:
-            out.extend(data[i - 2 :])  # best effort
-            actions.append("truncated segment; copied remainder")
-            break
+            raise ValueError(f"truncated JPEG segment at marker 0x{marker:02X}")
         payload = data[i + 2 : i + seglen]
         next_i = i + seglen
 
@@ -465,6 +364,9 @@ def strip_jpeg(data: bytes, *, strip_all_app: bool = True) -> tuple[bytes, list[
             out.extend(data[i : i + seglen])
         i = next_i
 
+    if not saw_eoi:
+        raise ValueError("truncated JPEG: missing EOI marker")
+
     if not actions:
         actions.append("no JPEG APP segments removed")
     return bytes(out), actions
@@ -475,10 +377,8 @@ def clean_image(
     dest: Path,
     *,
     strip_all_metadata: bool = True,
-    synthid_dir: str | None = None,
 ) -> dict[str, Any]:
     require_input_size(path)
-    synthid_before = run_synthid_score(path, synthid_dir)
     data = path.read_bytes()
     fmt = detect_format(data)
     if fmt == "png":
@@ -488,29 +388,9 @@ def clean_image(
     else:
         raise ValueError(f"unsupported format: {fmt}")
 
-    # Optional exiftool pass for residual tags
     safe_write_bytes(dest, cleaned)
-    exiftool = which("exiftool")
-    if exiftool and strip_all_metadata:
-        try:
-            subprocess.run(
-                [
-                    exiftool,
-                    "-all=",
-                    "-overwrite_original",
-                    safe_arg(str(dest)),
-                ],
-                capture_output=True,
-                text=True,
-                timeout=60,
-                check=False,
-                preexec_fn=subprocess_rlimits,
-            )
-            actions.append("exiftool -all= pass")
-        except Exception as e:
-            actions.append(f"exiftool failed: {e}")
 
-    after = inspect_image(dest, synthid_dir=synthid_dir)
+    after = inspect_image(dest)
     return {
         "input": str(path),
         "output": str(dest),
@@ -521,6 +401,6 @@ def clean_image(
         "still_has_c2pa": after.has_c2pa,
         "still_has_ai_metadata": after.has_ai_metadata,
         "post_findings": after.findings,
-        "synthid_before": synthid_before,
-        "synthid_after": after.synthid,
+        "synthid_before": None,
+        "synthid_after": None,
     }

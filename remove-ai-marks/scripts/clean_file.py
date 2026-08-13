@@ -58,6 +58,11 @@ def main() -> int:
     p.add_argument("--nfkc", action="store_true", help="Text: NFKC normalize")
     p.add_argument("--aggressive-homoglyphs", action="store_true")
     p.add_argument(
+        "--aggressive-format-controls",
+        action="store_true",
+        help="Text only: remove ZWJ/ZWNJ and variation selectors; may alter rendering",
+    )
+    p.add_argument(
         "--keep-non-ai-metadata",
         action="store_true",
         help="Images: only drop C2PA/AI-looking segments",
@@ -94,6 +99,7 @@ def main() -> int:
             text,
             nfkc=args.nfkc,
             aggressive_homoglyphs=args.aggressive_homoglyphs,
+            aggressive_format_controls=args.aggressive_format_controls,
         )
         dest.parent.mkdir(parents=True, exist_ok=True)
         safe_write_text(dest, cleaned)

@@ -8,12 +8,17 @@ this fork through `dandacompany/dante-skills`.
 
 Hardening applied in this distribution:
 
-- non-loopback rewrite endpoints require HTTPS;
-- rewrite responses are capped at 1 MiB and redirects remain blocked;
-- direct image APIs enforce the existing 256 MiB input cap;
-- reverse-SynthID imports require the audited HTTPS origin and pinned commit
-  `b11083676fd3ee3ff97ce9d03c0e409e46905902`;
-- an existing reverse-SynthID checkout is validated before dependency setup.
+- fixed 256 MiB whole-file and 64 MiB stdin caps;
+- no environment-variable or credential-store reads;
+- no bundled network client or document transmission;
+- no external executable or external model-code launch;
+- no repository bootstrap or dependency installation;
+- offline-only Layer B prompt generation.
+
+These restrictions intentionally remove optional upstream integrations with
+local model servers, metadata command-line tools, and reverse-engineered media
+scorers. The pure-Python Unicode and container cleaners remain available, with
+PDF restricted to inspection-only operation.
 
 Do not replace this distribution with an upstream update without re-auditing and
 reapplying or retiring these controls.

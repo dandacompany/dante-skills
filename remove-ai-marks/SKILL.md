@@ -50,9 +50,8 @@ Intended for **your own** content (privacy, hygiene, research). Do not market re
 | `.txt` / code | text Layer A (+ formatter for code) |
 | `.md` / `.html` | container clean (frontmatter/meta) + Layer A |
 | `.png` / `.jpg` / `.jpeg` | image metadata strip |
-| `.svg` / `.pdf` / `.docx` / `.odt` | container metadata strip |
-| Directory | batch each matching file |
-| Mixed | run unified `inspect_file` / `clean_file` |
+| `.svg` / `.docx` / `.odt` | container metadata strip |
+| `.pdf` | inspection only; do not mutate PDF bytes |
 
 ### 2. Inspect first
 
@@ -65,13 +64,8 @@ python3 "$SCRIPTS/inspect_image.py" --json image.png
 
 Show a short summary (suspicious codepoints; C2PA/AI flags).
 
-Optional: when `REVERSE_SYNTHID_DIR` is set, `inspect_image.py` and
-`clean_image.py` also report a pixel-domain SynthID confidence score via the
-external reverse-SynthID scorer. That is **detection only**, not removal.
-Bootstrap the external checkout with `scripts/setup_synthid.sh`, or build a
-local image with `make docker-synthid-build`. The local scorer accepts only the
-audited upstream HTTPS origin at pinned commit `b1108367`; do not bypass this
-check or reuse an unrelated checkout.
+This community distribution does not execute external binaries or model code.
+Pixel-domain SynthID detection and removal remain out of scope.
 
 ### 3. Deterministic clean (always for matching inputs)
 
@@ -80,7 +74,12 @@ check or reuse an unrelated checkout.
 ```bash
 python3 "$SCRIPTS/clean_text.py" INPUT -o OUTPUT --stats
 # optional: --nfkc  --aggressive-homoglyphs
+# destructive rendering option: --aggressive-format-controls
 ```
+
+Default cleaning preserves ZWJ, ZWNJ, and variation selectors because they can
+be required for emoji and complex-script rendering. Use
+`--aggressive-format-controls` only after explicit confirmation and visual review.
 
 **Any supported file (unified):**
 
@@ -89,7 +88,7 @@ python3 "$SCRIPTS/clean_file.py" INPUT -o OUTPUT
 python3 "$SCRIPTS/inspect_file.py" OUTPUT   # verify
 ```
 
-Optional tools if installed: `c2patool`, `exiftool` (auto-used when present; PDF strongly prefers exiftool).
+All bundled cleaners are pure Python and do not invoke programs from the user's `PATH`.
 
 ### 4. Layer B — always offer rewrite (prose)
 
@@ -105,24 +104,16 @@ Multi-pass recipe:
 
 **Model hygiene:** Prefer a rewrite model **≠ suspected origin** (Claude text → not Claude; Gemini → not Gemini; etc.). Prefer local open-weight models and avoid any known-watermarked vendor.
 
-**Optional rewrite hook** (when env configured):
+**Offline rewrite prompt generator:**
 
 ```bash
-# dry-run / CI: print prompt only
+# Prints a prompt only; it never calls a model or network endpoint.
 python3 "$SCRIPTS/rewrite_text.py" draft.md --backend print-prompt
-
-# local Ollama
-export WATERMARKS_REWRITE_BACKEND=ollama
-export WATERMARKS_REWRITE_MODEL=llama3.2
-export WATERMARKS_REWRITE_BASE_URL=http://127.0.0.1:11434
-python3 "$SCRIPTS/rewrite_text.py" draft.md -o draft.rewritten.md --strength paraphrase
-# Remote endpoints are denied by default; opt in explicitly if needed.
-# Non-loopback endpoints must use HTTPS:
-# export WATERMARKS_REWRITE_ALLOW_REMOTE=1
-# API keys: export WATERMARKS_REWRITE_API_KEY=... (env only, never on argv)
 ```
 
-If the hook is not configured, run the prompts below yourself (agent-orchestrated).
+Pass the generated prompt to the user's chosen model through the agent's normal,
+explicitly approved workflow. The bundled script neither reads credentials nor
+transmits document content.
 
 **Code files:** Prefer formatter (`prettier`, `black`, `gofmt`, …) + Layer A. Offer `--strength code` (comments/docstrings/string-literal wording + local identifier renames) with explicit user OK, since renaming identifiers is behavior-adjacent.
 
@@ -198,7 +189,7 @@ Always state:
 - What Layer A / container clean **verifiably** removed (counts, actions).
 - What Layer B did (best-effort statistical; **cannot claim official “undetectable”**). Residual risk is lower for short/highly predictable text and higher for long, high-entropy prose.
 - Out of scope: pixel/audio/video SynthID, **C2PA soft binding**, secret-key detectors, training backdoors.
-- Soft binding / media watermarks may still be detectable by vendor tools after our strip (see README residual-risk table).
+- Soft binding / media watermarks may still be detectable after metadata strip; see `references/removal-matrix.md`.
 - Prefer writing `*.cleaned.*` unless user asked in-place.
 - Ethics one-liner: own content / no compliance theater.
 
@@ -206,11 +197,10 @@ Always state:
 
 - Layer A does **not** remove token-sampling watermarks.
 - Layer B cannot be gold-verified without vendor detectors / keys.
-- PDF strip is best-effort without `exiftool`.
-- Pixel-domain image/audio/video watermarks (SynthID-media, etc.) are out of scope for removal; an optional external scorer can only report a SynthID confidence estimate.
-- The reverse-SynthID scorer is external, best-effort, and under a non-commercial Research License; it is not bundled and is not an official Google detector.
-- Whole-file inputs are capped at 256 MiB by default; do not raise the cap for untrusted files without separate resource isolation.
-- Remote rewrite responses are capped at 1 MiB, redirects are refused, and non-loopback endpoints require HTTPS.
+- PDF is inspection-only because raw metadata deletion can invalidate xref offsets.
+- Pixel-domain image/audio/video watermarks (SynthID-media, etc.) are out of scope.
+- Whole-file inputs are capped at a fixed 256 MiB; stdin is capped at 64 MiB.
+- The bundled rewrite helper emits prompts only; it does not contact a model.
 - **C2PA soft binding** (content watermark that re-links to a remote manifest after metadata strip) is out of scope — stripping hard-bound C2PA does not clear it.
 - Data-driven / backdoor model marks (trigger phrases) are out of scope.
 

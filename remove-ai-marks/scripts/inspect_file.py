@@ -72,7 +72,11 @@ def main() -> int:
         return 0 if report.suspicious_total == 0 else 1
 
     if kind == "image":
-        report = inspect_image(args.path)
+        try:
+            report = inspect_image(args.path)
+        except (OSError, ValueError) as exc:
+            eprint(f"error: {exc}")
+            return 2
         if args.json:
             emit_json({"kind": "image", **report.to_dict()})
         else:
@@ -86,6 +90,11 @@ def main() -> int:
         return 0 if not (report.has_c2pa or report.has_ai_metadata) else 1
 
     report = inspect_container(args.path)
+    layer_a = None
+    if report.format in ("markdown", "html"):
+        text = read_text_input(str(args.path))
+        layer_a = inspect_text(text, aggressive=args.aggressive)
+        report.details["layer_a"] = layer_a.to_dict()
     if args.json:
         emit_json({"kind": "container", **report.to_dict()})
     else:
@@ -96,7 +105,11 @@ def main() -> int:
         print(f"AI metadata: {report.has_ai_metadata}")
         for f in report.findings:
             print(f"  - {f}")
-    return 0 if not (report.has_c2pa or report.has_ai_metadata) else 1
+        if layer_a and layer_a.suspicious_total:
+            print("Layer A Unicode:")
+            print(human_report(layer_a))
+    layer_a_hit = bool(layer_a and layer_a.suspicious_total)
+    return 0 if not (report.has_c2pa or report.has_ai_metadata or layer_a_hit) else 1
 
 
 if __name__ == "__main__":
