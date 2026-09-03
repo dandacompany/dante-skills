@@ -100,6 +100,7 @@ hermes skills install dandacompany/dante-skills/<skill-name>
 | 스킬                              | 설명                                                                                                                                                            | 설치                                                            |
 | --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
 | [magma-support](./magma-support/) | MAGMA 고객지원 1차 응대 지식(샘플). 고객 문의를 정책 기반으로 분류·1차 답변 초안 작성, 불확실한 건 담당자 확인 필요로 표시. 헤르메스 강의 4.1 웹훅 실습 준비물. | `hermes skills install dandacompany/dante-skills/magma-support` |
+| [persona-interview](./persona-interview/) | 소크라테스식 문답으로 5~7개만 물어보고 Hermes 공식 4섹션(Identity·Style·Avoid·Defaults) 구조의 `SOUL.md` 초안을 만들어 준다. 템플릿 없이 빈손에서 페르소나를 시작할 때. 헤르메스 강의 2.2 페르소나 만들기의 선택 도구. | `hermes skills install dandacompany/dante-skills/persona-interview` |
 
 > `iris-security-audit`(강의 4.3), `tally-api`, `brightdata-guide`도 헤르메스 강의 실습에서 함께 활용됩니다.
 
