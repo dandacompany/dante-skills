@@ -93,7 +93,7 @@ hermes skills install dandacompany/dante-skills/<skill-name>
 
 | 스킬                    | 설명                                                                                                                                                                                                                                                                                  | 설치                                                                                                          |
 | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| [waveterm](./waveterm/) | Wave Terminal을 `wsh`로 조종. 탭·블록 생성과 배치, 다른 패널에 키 입력 전송·스크롤백 회수, `claude`/`codex`/`hermes`를 별도 블록에 띄워 작업을 위임하고 결과를 수거(`wave_delegate.py`), 결과를 스크롤백 대신 preview/web/editor 블록으로 표시. 원격 연결·파일·변수·시크릿 관리 포함. | `skills add dandacompany/dante-skills@waveterm`<br>`hermes skills install dandacompany/dante-skills/waveterm` |
+| [danteterm](./danteterm/) | DanteTerm(Wave Terminal 포크)을 `dsh`로 조종. 탭·블록 생성과 배치, 다른 패널에 키 입력 전송·스크롤백 회수, `claude`/`codex`/`hermes`를 별도 블록에 띄워 작업을 위임하고 결과를 수거(`danteterm_delegate.py`), 결과를 스크롤백 대신 preview/web/editor 블록으로 표시. 원격 연결·파일·변수·시크릿 관리 포함. | `skills add dandacompany/dante-skills@danteterm`<br>`hermes skills install dandacompany/dante-skills/danteterm` |
 
 ### 🎓 Hermes 강의 실습용
 

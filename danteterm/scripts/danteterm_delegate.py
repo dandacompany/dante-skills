@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Delegate a task to a terminal agent running in another Wave block.
+"""Delegate a task to a terminal agent running in another DanteTerm block.
 
 Creates a block, launches an agent CLI in it, injects a prompt, waits for the work
 to finish, and prints the result to stdout.
 
-Requires wsh v0.17.4+ (tab / sendkeys / createblock placement) and must run inside a
-Wave terminal block, since wsh authenticates through WAVETERM_JWT.
+Requires dsh v0.17.4+ (tab / sendkeys / createblock placement) and must run inside a
+DanteTerm terminal block, since dsh authenticates through DANTETERM_JWT.
 
 The agent block is tracked by its block UUID, never by its 1-based number. Numbers
 are per-tab and shift when blocks are added or closed; a UUID resolves from any tab
@@ -19,17 +19,17 @@ Two completion modes:
               work, so this does not rely on the agent cooperating, and it survives
               TUI redraws, spinners, and output longer than the scrollback buffer.
 
-  scrollback  Polls `wsh termscrollback` and calls it finished when the text stops
+  scrollback  Polls `dsh termscrollback` and calls it finished when the text stops
               changing for --quiet-for seconds. Use only when the output cannot be
               redirected -- for example an agent with no non-interactive mode.
               Heuristic by nature.
 
 Examples:
-  wave_delegate.py --agent claude --prompt "summarize ./README.md"
-  wave_delegate.py --agent codex --prompt "..." --cwd ~/projects/myrepo
-  wave_delegate.py --agent codex --prompt-file task.md --tab work --position right --size 40
-  wave_delegate.py --agent claude --prompt "..." --mode scrollback --quiet-for 20
-  wave_delegate.py --agent claude --prompt "..." --keep   # leave the block open
+  danteterm_delegate.py --agent claude --prompt "summarize ./README.md"
+  danteterm_delegate.py --agent codex --prompt "..." --cwd ~/projects/myrepo
+  danteterm_delegate.py --agent codex --prompt-file task.md --tab work --position right --size 40
+  danteterm_delegate.py --agent claude --prompt "..." --mode scrollback --quiet-for 20
+  danteterm_delegate.py --agent claude --prompt "..." --keep   # leave the block open
 """
 
 import argparse
@@ -56,34 +56,34 @@ ARGV_PROMPT = {
 
 
 def die(msg, code=1):
-    print(f"wave_delegate: {msg}", file=sys.stderr)
+    print(f"danteterm_delegate: {msg}", file=sys.stderr)
     sys.exit(code)
 
 
-def wsh(*args, timeout=30):
-    p = subprocess.run(["wsh", *args], capture_output=True, text=True, timeout=timeout)
+def dsh(*args, timeout=30):
+    p = subprocess.run(["dsh", *args], capture_output=True, text=True, timeout=timeout)
     return p.returncode, (p.stdout or "") + (p.stderr or "")
 
 
 def preflight():
-    if not os.environ.get("WAVETERM_JWT"):
-        die("not running inside a Wave terminal block (WAVETERM_JWT unset)")
-    rc, out = wsh("tab", "list")
+    if not os.environ.get("DANTETERM_JWT"):
+        die("not running inside a DanteTerm terminal block (DANTETERM_JWT unset)")
+    rc, out = dsh("tab", "list")
     if rc != 0:
-        die("`wsh tab list` failed -- wsh is older than v0.17.4 or not connected:\n" + out.strip())
+        die("`dsh tab list` failed -- dsh is older than v0.17.4 or not connected:\n" + out.strip())
 
 
 def resolve_tab_id(tab):
     """Turn a tab number/name/uuid into a tab id. None means the current tab."""
     if not tab:
-        return os.environ.get("WAVETERM_TABID") or None
-    rc, out = wsh("tab", "list", "--json")
+        return os.environ.get("DANTETERM_TABID") or None
+    rc, out = dsh("tab", "list", "--json")
     if rc != 0:
         die("could not list tabs:\n" + out.strip())
     try:
         entries = json.loads(out)
     except json.JSONDecodeError:
-        die("`wsh tab list --json` did not return JSON:\n" + out.strip())
+        die("`dsh tab list --json` did not return JSON:\n" + out.strip())
     by_name = [e for e in entries if e.get("name") == tab]
     if len(by_name) == 1:
         return by_name[0]["tabid"]
@@ -100,13 +100,13 @@ def resolve_tab_id(tab):
 
 
 def block_ids(tab_id):
-    rc, out = wsh("blocks", "list", "--tab", tab_id, "--json")
+    rc, out = dsh("blocks", "list", "--tab", tab_id, "--json")
     if rc != 0:
         die("could not list blocks:\n" + out.strip())
     try:
         return {b["blockid"] for b in json.loads(out)}
     except (json.JSONDecodeError, KeyError, TypeError):
-        die("`wsh blocks list --json` did not return the expected shape:\n" + out.strip())
+        die("`dsh blocks list --json` did not return the expected shape:\n" + out.strip())
 
 
 def create_agent_block(tab, tab_id, target, position, size, cwd):
@@ -124,7 +124,7 @@ def create_agent_block(tab, tab_id, target, position, size, cwd):
         args += ["--target", target, "--position", position]
         if size:
             args += ["--size", str(size)]
-    rc, out = wsh(*args)
+    rc, out = dsh(*args)
     if rc != 0:
         die("could not create the agent block:\n" + out.strip())
 
@@ -135,13 +135,13 @@ def create_agent_block(tab, tab_id, target, position, size, cwd):
         if len(new) > 1:
             die("more than one block appeared; refusing to guess which is the agent's")
         time.sleep(0.5)
-    die("the block was created but never showed up in `wsh blocks list`")
+    die("the block was created but never showed up in `dsh blocks list`")
 
 
 def wait_for_shell(block, timeout):
     deadline = time.time() + timeout
     while time.time() < deadline:
-        rc, out = wsh("termscrollback", "-b", block)
+        rc, out = dsh("termscrollback", "-b", block)
         if rc == 0 and out.strip():
             return True
         time.sleep(1)
@@ -149,7 +149,7 @@ def wait_for_shell(block, timeout):
 
 
 def send_line(block, text):
-    rc, out = wsh("sendkeys", "-b", block, "--enter", text)
+    rc, out = dsh("sendkeys", "-b", block, "--enter", text)
     if rc != 0:
         die("sendkeys failed:\n" + out.strip())
 
@@ -183,7 +183,7 @@ def wait_file_mode(block, timeout, poll, result, done):
                     return f.read()
             return ""  # marker without a result file: the agent broke the contract
         time.sleep(poll)
-    _, tail = wsh("termscrollback", "-b", block)
+    _, tail = dsh("termscrollback", "-b", block)
     die(f"timed out after {timeout}s waiting for {done}\n--- agent screen ---\n{tail[-2000:]}")
 
 
@@ -191,7 +191,7 @@ def wait_scrollback_mode(block, timeout, poll, quiet_for):
     deadline = time.time() + timeout
     last, last_change = None, time.time()
     while time.time() < deadline:
-        rc, out = wsh("termscrollback", "-b", block)
+        rc, out = dsh("termscrollback", "-b", block)
         if rc == 0:
             if out != last:
                 last, last_change = out, time.time()
@@ -234,10 +234,10 @@ def main():
     cmd = args.command or DEFAULT_LAUNCH.get(args.agent, args.agent)
     tab_id = resolve_tab_id(args.tab)
     if not tab_id:
-        die("could not determine the target tab (WAVETERM_TABID unset and no --tab given)")
+        die("could not determine the target tab (DANTETERM_TABID unset and no --tab given)")
 
     block = create_agent_block(args.tab, tab_id, args.target, args.position, args.size, args.cwd)
-    print(f"wave_delegate: agent block {block}", file=sys.stderr)
+    print(f"danteterm_delegate: agent block {block}", file=sys.stderr)
 
     if not wait_for_shell(block, args.ready_timeout):
         die(f"the new block never produced a shell prompt within {args.ready_timeout}s")
@@ -252,7 +252,7 @@ def main():
         out = wait_scrollback_mode(block, args.timeout, args.poll, args.quiet_for)
 
     if not args.keep:
-        wsh("deleteblock", "-b", block)
+        dsh("deleteblock", "-b", block)
 
     sys.stdout.write(out)
     if out and not out.endswith("\n"):

@@ -1,20 +1,20 @@
-# Delegating work to terminal agents in Wave blocks
+# Delegating work to terminal agents in DanteTerm blocks
 
 The pattern: open a block, run an agent CLI in it, hand it a task, collect the answer.
-`scripts/wave_delegate.py` implements it; this file explains the decisions behind it so
+`scripts/danteterm_delegate.py` implements it; this file explains the decisions behind it so
 the script can be adapted rather than guessed at.
 
 ## The loop
 
-1. **Create the block** — `wsh createblock term` (it gets `controller=shell`, so a real
+1. **Create the block** — `dsh createblock term` (it gets `controller=shell`, so a real
    shell runs in it; a bare `view=term` block has no shell and nothing to type into).
 2. **Capture its uuid**, not its number — see `addressing.md`.
 3. **Wait for the shell** — the block exists before its shell does. Poll
-   `wsh termscrollback -b <uuid>` until it returns something.
+   `dsh termscrollback -b <uuid>` until it returns something.
 4. **Launch with the prompt as an argv argument**, not by typing into a TUI:
-   `wsh sendkeys -b <uuid> --enter "claude 'do the thing'"`.
+   `dsh sendkeys -b <uuid> --enter "claude 'do the thing'"`.
 5. **Wait for completion** — see below; this is the only genuinely hard part.
-6. **Collect and clean up** — read the result, then `wsh deleteblock -b <uuid>` unless
+6. **Collect and clean up** — read the result, then `dsh deleteblock -b <uuid>` unless
    the block should stay for inspection.
 
 ## Use the agent's non-interactive form, as an argv argument
@@ -36,13 +36,13 @@ Check `<agent> --help` before adding an entry — a default-interactive CLI is t
 
 **argv, not typing.** Passing the prompt as a shell argument means the shell hands it
 over at startup. Typing it afterwards races the TUI: the input box may not exist yet, the
-agent may redraw mid-type, and bracketed-paste handling differs per agent. `wsh sendkeys`
+agent may redraw mid-type, and bracketed-paste handling differs per agent. `dsh sendkeys`
 writes bytes straight to the PTY with no escape processing, so shell-quote the prompt
 (`shlex.quote`) and nothing else is needed.
 
 ## Completion detection
 
-There is no completion signal in wsh. Two workable strategies:
+There is no completion signal in dsh. Two workable strategies:
 
 ### Shell redirect (default, reliable)
 
@@ -65,7 +65,7 @@ Requires the agent to have a non-interactive form. If it does not, use scrollbac
 
 ### Scrollback quiescence (fallback, heuristic)
 
-Poll `wsh termscrollback -b <uuid>` and call it done when the text has not changed for N
+Poll `dsh termscrollback -b <uuid>` and call it done when the text has not changed for N
 seconds. Use only when the prompt cannot be modified — for example when attaching to an
 agent session that is already running.
 
@@ -85,7 +85,7 @@ directory they trust — codex rejects a non-git directory outright. Pass `--cwd
 sets `cmd:cwd` on the block:
 
 ```bash
-wave_delegate.py --agent codex --prompt "..." --cwd ~/projects/myrepo
+danteterm_delegate.py --agent codex --prompt "..." --cwd ~/projects/myrepo
 ```
 
 The script defaults `--cwd` to the caller's own cwd, which is usually what is meant.
@@ -96,12 +96,11 @@ The script prints the answer to stdout, so the caller's own terminal receives it
 can be piped like any other output:
 
 ```bash
-wave_delegate.py --agent claude --prompt "audit ./pkg for races" > audit.md
-wave_delegate.py --agent codex --prompt "..." | wsh ai -   # into the AI sidebar
+danteterm_delegate.py --agent claude --prompt "audit ./pkg for races" > audit.md
 ```
 
-To show it in a Wave block instead of the caller's scrollback, write it to a file and
-open that file in a preview block (see `output-to-wave.md`).
+To show it in a DanteTerm block instead of the caller's scrollback, write it to a file and
+open that file in a preview block (see `output-to-danteterm.md`).
 
 ## Fan-out
 
@@ -109,7 +108,7 @@ Multiple agents in one tab, each in its own block, all tracked by uuid:
 
 ```bash
 for a in claude codex; do
-  wave_delegate.py --agent "$a" --tab review --target 1 --position right \
+  danteterm_delegate.py --agent "$a" --tab review --target 1 --position right \
     --prompt "review ./diff.patch" --keep > "review-$a.md" &
 done
 wait
