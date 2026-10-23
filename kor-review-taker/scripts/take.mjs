@@ -160,6 +160,9 @@ async function collect({ evaluate, settle, gate }) {
   return { ...evaluate(), retried: true };
 }
 
+// 페이지 상태를 읽는 짧은 evaluate. 이동 중에 걸려도 오래 붙잡지 않는다(기다림 전체가 15초를 넘지 않게).
+const PROBE = { timeoutMs: 5000 };
+
 function platformOf(u) {
   const host = new URL(u).hostname;
   return PLATFORMS.find((p) => p.test.test(host))?.id || null;
@@ -290,7 +293,7 @@ function writeCsv(file, rows) {
 function pageGate(sid, platform) {
   // 일반 스마트스토어 상품은 로그아웃 상태에서 네이버 로그인으로 넘어간다(2026-10-22 실측, 브랜드스토어는 열림).
   const here =
-    bskSafe(["evaluate", "--session", sid, "--json", "location.href"]).value
+    bskSafe(["evaluate", "--session", sid, "--json", "location.href"], PROBE).value
       ?.value || "";
   if (
     /nid\.naver\.com|login\.coupang\.com|\/(login|signin)([/?#]|$)/i.test(
@@ -311,7 +314,7 @@ function pageGate(sid, platform) {
       sid,
       "--json",
       "document.title + ' ' + (document.body?.innerText || '').slice(0, 600)",
-    ]).value?.value || "";
+    ], PROBE).value?.value || "";
   if (
     /access denied|captcha|보안문자|robot|사용권한이 (없|제한)|비정상적인 (접근|트래픽)|접근이 (차단|제한)/i.test(
       head,
@@ -418,8 +421,11 @@ async function main() {
           sid,
           "--json",
           "location.href + '|' + document.readyState",
-        ]).value?.value ?? null;
-      const settle = () => waitSettled(probe);
+        ], PROBE).value?.value ?? null;
+      const settle = async () => {
+        if (!(await waitSettled(probe)))
+          console.error(`… ${platform} 페이지가 15초 안에 멈추지 않음 — 그대로 진행`);
+      };
       const gate = () => pageGate(sid, platform);
       await settle();
       const stop = gate();
@@ -465,7 +471,7 @@ async function main() {
           retried: !!got.retried,
           collector: path.relative(HERE, file),
         });
-        console.error(`✗ ${got.status} ${platform} — ${note}`);
+        if (got.msg) console.error(`✗ ${got.status} ${platform} — ${note}`);
         continue;
       }
       const r = got.value;
@@ -482,6 +488,7 @@ async function main() {
         ...j,
         product_id: r.product_id,
         product_name: r.product_name,
+        retried: !!got.retried,
         collected: r.reviews.length,
         expected_total: r.expected_total,
         pages: r.log,
