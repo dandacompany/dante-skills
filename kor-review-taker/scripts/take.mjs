@@ -24,6 +24,7 @@ const EXIT = {
   BLOCKED: 5,
   LOGIN_REQUIRED: 6,
   COOLDOWN: 7,
+  NAVIGATED: 8,
   USAGE: 64,
 };
 
@@ -60,7 +61,7 @@ const HELP = `kor-review-taker — 국내 이커머스 상품 리뷰를 CSV 로 
   --collector <file>     수집기 파일을 직접 지정 (구조 수정 시험용)
   --platforms            지원 플랫폼과 수집기 파일 목록
 
-종료 코드  0 OK · 2 PARTIAL · 3 STRUCTURE · 4 UNSUPPORTED · 5 BLOCKED · 6 LOGIN_REQUIRED · 7 COOLDOWN · 64 사용법 오류
+종료 코드  0 OK · 2 PARTIAL · 3 STRUCTURE · 4 UNSUPPORTED · 5 BLOCKED · 6 LOGIN_REQUIRED · 7 COOLDOWN · 8 NAVIGATED · 64 사용법 오류
 결과       <out>/<platform>_<product>.csv · .json, 여러 개면 merged.csv, 항상 run-report.json`;
 
 function parseArgs(argv) {
@@ -113,6 +114,50 @@ function bskSafe(args, opts) {
       code: parsed?.code,
     };
   }
+}
+
+// 페이지가 스스로 다시 이동하는 동안 evaluate 하면 CDP 가 이 오류로 끊는다(쿠팡 2026-10-22·23 실측). 구조 변경이 아니다.
+const NAVIGATED_RE =
+  /Inspected target navigated or closed|Execution context was destroyed|Cannot find context with specified id/i;
+
+function classifyEvalError(msg) {
+  if (/BLOCKED|Failed to fetch/.test(msg)) return "BLOCKED";
+  if (NAVIGATED_RE.test(msg)) return "NAVIGATED";
+  return "STRUCTURE";
+}
+
+// probe() 는 "주소|readyState" 또는 null(이동 중이라 못 읽음). 같은 값이 stableMs 동안 이어지고 complete 면 멈춘 것.
+async function waitSettled(
+  probe,
+  {
+    timeoutMs = 15000,
+    stableMs = 2000,
+    pollMs = 500,
+    now = Date.now,
+    sleep = (ms) => new Promise((r) => setTimeout(r, ms)),
+  } = {},
+) {
+  const end = now() + timeoutMs;
+  let last = null;
+  let since = now();
+  while (now() < end) {
+    const s = probe();
+    if (s !== last) [last, since] = [s, now()];
+    else if (s?.endsWith("|complete") && now() - since >= stableMs) return true;
+    await sleep(pollMs);
+  }
+  return false;
+}
+
+// 수집기가 페이지 이동으로 끊겼으면 같은 탭에서 멈추길 기다렸다가 한 번만 다시 돌린다.
+// 새로 열지 않는다 — 쿠팡은 방문 횟수로 막는다. 기다리는 동안 차단·로그인 화면으로 바뀌었으면 그 상태로 끝낸다.
+async function collect({ evaluate, settle, gate }) {
+  const first = evaluate();
+  if (first.status !== "NAVIGATED") return first;
+  await settle();
+  const stop = gate();
+  if (stop) return { ...stop, retried: true };
+  return { ...evaluate(), retried: true };
 }
 
 function platformOf(u) {
@@ -241,6 +286,46 @@ function writeCsv(file, rows) {
   fs.writeFileSync(file, "﻿" + lines.join("\r\n") + "\r\n");
 }
 
+// 로그인·차단 화면이면 그 상태를, 아니면 null.
+function pageGate(sid, platform) {
+  // 일반 스마트스토어 상품은 로그아웃 상태에서 네이버 로그인으로 넘어간다(2026-10-22 실측, 브랜드스토어는 열림).
+  const here =
+    bskSafe(["evaluate", "--session", sid, "--json", "location.href"]).value
+      ?.value || "";
+  if (
+    /nid\.naver\.com|login\.coupang\.com|\/(login|signin)([/?#]|$)/i.test(
+      here,
+    )
+  ) {
+    console.error(`✗ LOGIN_REQUIRED ${platform} — ${here.split("?")[0]}`);
+    return {
+      status: "LOGIN_REQUIRED",
+      note: `로그인 페이지로 이동함: ${here.split("?")[0]}`,
+    };
+  }
+  // 쿠팡 차단 페이지는 제목이 "쿠팡!" 이라 본문 문구까지 본다.
+  const head =
+    bskSafe([
+      "evaluate",
+      "--session",
+      sid,
+      "--json",
+      "document.title + ' ' + (document.body?.innerText || '').slice(0, 600)",
+    ]).value?.value || "";
+  if (
+    /access denied|captcha|보안문자|robot|사용권한이 (없|제한)|비정상적인 (접근|트래픽)|접근이 (차단|제한)/i.test(
+      head,
+    )
+  ) {
+    console.error(`✗ BLOCKED ${platform} — 차단 페이지`);
+    return {
+      status: "BLOCKED",
+      note: `차단 페이지: ${head.replace(/\s+/g, " ").slice(0, 120)}`,
+    };
+  }
+  return null;
+}
+
 async function main() {
   const a = parseArgs(process.argv.slice(2));
   if (a.help) return (console.log(HELP), EXIT.OK);
@@ -326,41 +411,20 @@ async function main() {
         });
         continue;
       }
-      // 일반 스마트스토어 상품은 로그아웃 상태에서 네이버 로그인으로 넘어간다(2026-10-22 실측, 브랜드스토어는 열림).
-      const here =
-        bskSafe(["evaluate", "--session", sid, "--json", "location.href"]).value
-          ?.value || "";
-      if (
-        /nid\.naver\.com|login\.coupang\.com|\/(login|signin)([/?#]|$)/i.test(
-          here,
-        )
-      ) {
-        Object.assign(res, {
-          status: "LOGIN_REQUIRED",
-          note: `로그인 페이지로 이동함: ${here.split("?")[0]}`,
-        });
-        console.error(`✗ LOGIN_REQUIRED ${platform} — ${here.split("?")[0]}`);
-        continue;
-      }
-      // 쿠팡 차단 페이지는 제목이 "쿠팡!" 이라 본문 문구까지 본다.
-      const head =
+      const probe = () =>
         bskSafe([
           "evaluate",
           "--session",
           sid,
           "--json",
-          "document.title + ' ' + (document.body?.innerText || '').slice(0, 600)",
-        ]).value?.value || "";
-      if (
-        /access denied|captcha|보안문자|robot|사용권한이 (없|제한)|비정상적인 (접근|트래픽)|접근이 (차단|제한)/i.test(
-          head,
-        )
-      ) {
-        Object.assign(res, {
-          status: "BLOCKED",
-          note: `차단 페이지: ${head.replace(/\s+/g, " ").slice(0, 120)}`,
-        });
-        console.error(`✗ BLOCKED ${platform} — 차단 페이지`);
+          "location.href + '|' + document.readyState",
+        ]).value?.value ?? null;
+      const settle = () => waitSettled(probe);
+      const gate = () => pageGate(sid, platform);
+      await settle();
+      const stop = gate();
+      if (stop) {
+        Object.assign(res, stop);
         continue;
       }
       const opts = {
@@ -368,33 +432,43 @@ async function main() {
         delayMs: Math.max(a.delayMs, spec.minDelayMs || 0),
       };
       const timeout = `${Math.min(30, Math.ceil((a.maxPages * (opts.delayMs * 1.3 + 1500)) / 60000) + 2)}m`;
-      const ev = bskSafe(
-        [
-          "evaluate",
-          "--session",
-          sid,
-          "--json",
-          "--timeout",
-          timeout,
-          buildExpression(file, opts),
-        ],
-        { timeoutMs: 31 * 60000 },
-      );
-      const v = ev.ok ? ev.value : null;
-      if (!v?.ok) {
+      const runCollector = () => {
+        const ev = bskSafe(
+          [
+            "evaluate",
+            "--session",
+            sid,
+            "--json",
+            "--timeout",
+            timeout,
+            buildExpression(file, opts),
+          ],
+          { timeoutMs: 31 * 60000 },
+        );
+        const v = ev.ok ? ev.value : null;
+        if (v?.ok) return { ok: true, value: v.value };
         const msg = v?.error?.text || ev.error || "evaluate 실패";
-        const status = /BLOCKED|Failed to fetch/.test(msg)
-          ? "BLOCKED"
-          : "STRUCTURE";
+        return { status: classifyEvalError(msg), msg };
+      };
+      const got = await collect({ evaluate: runCollector, settle, gate });
+      if (!got.ok) {
+        const where = (probe() || "").split("|")[0].split("?")[0];
+        const note =
+          got.status === "NAVIGATED"
+            ? `수집 중 페이지가 다시 이동함(같은 탭 재시도 1회 포함), 마지막 주소 ${where}`
+            : got.msg
+              ? got.msg.split("\n")[0].slice(0, 300)
+              : got.note;
         Object.assign(res, {
-          status,
-          note: msg.split("\n")[0].slice(0, 300),
+          status: got.status,
+          note,
+          retried: !!got.retried,
           collector: path.relative(HERE, file),
         });
-        console.error(`✗ ${status} ${platform} — ${res.note}`);
+        console.error(`✗ ${got.status} ${platform} — ${note}`);
         continue;
       }
-      const r = v.value;
+      const r = got.value;
       const j = judge(r);
       const base = `${r.platform}_${String(r.product_id).replace(/[^\w-]/g, "")}`;
       const rows = toRows(r, url, report.started_at);
@@ -437,10 +511,21 @@ async function main() {
   return worst;
 }
 
-main().then(
-  (code) => process.exit(code),
-  (e) => {
-    console.error(e.message);
-    process.exit(e.code || 1);
-  },
-);
+export { EXIT, classifyEvalError, waitSettled, collect };
+
+// 시험에서 import 할 때는 돌지 않는다. 링크 경로(/tmp → /private/tmp 등)로 실행해도 돌도록 실제 경로로 비교한다.
+const invokedDirectly = () => {
+  try {
+    return fs.realpathSync(process.argv[1]) === fs.realpathSync(fileURLToPath(import.meta.url));
+  } catch {
+    return false;
+  }
+};
+if (process.argv[1] && invokedDirectly())
+  main().then(
+    (code) => process.exit(code),
+    (e) => {
+      console.error(e.message);
+      process.exit(e.code || 1);
+    },
+  );

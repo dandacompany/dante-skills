@@ -3,7 +3,7 @@
 `take.mjs` 가 **STRUCTURE(3)** 를 내거나, **UNSUPPORTED(4)** 플랫폼을 붙여야 할 때 이 절차를 끝까지 돈다.
 목표는 "수집기 파일을 고쳐 `take.mjs` 가 같은 URL 에서 OK 를 낼 때까지 반복하고, 고친 내용을 스킬 정본에 남기는 것"이다.
 
-BLOCKED(5)·LOGIN_REQUIRED(6) 는 구조 문제가 아니다. 이 절차로 가지 않는다 — SKILL.md 의 판단표대로 사용자에게 알린다.
+BLOCKED(5)·LOGIN_REQUIRED(6)·NAVIGATED(8) 는 구조 문제가 아니다. 이 절차로 가지 않는다 — SKILL.md 의 판단표대로 사용자에게 알린다.
 
 ## 0. 범위와 금지
 
