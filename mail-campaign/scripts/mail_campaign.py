@@ -30,7 +30,7 @@ try:
 except ImportError:  # Windows
     fcntl = None
 
-VERSION = "1.0.1"
+VERSION = "1.0.2"
 
 # ── 상태 열 ────────────────────────────────────────────────────────────
 COL_STATUS = "발송 상태"
@@ -437,9 +437,31 @@ class Roster:
         if self.csv_path:
             self._write_csv()
         else:
+            self._ensure_grid_columns(start + len(added))
             rng = f"{self._q(self.camp.tab)}!{_a1(start)}1:{_a1(start + len(added) - 1)}1"
             self._batch([{"range": rng, "values": [added]}])
         return added
+
+    def _ensure_grid_columns(self, need: int):
+        """시트 격자의 열 수가 모자라면 늘린다(CSV 를 올린 시트는 데이터 폭만큼만 열이 있다)."""
+        meta = self.gws.ok(
+            ["sheets", "spreadsheets", "get", "--params",
+             json.dumps({"spreadsheetId": self.sheet_id, "fields": "sheets.properties(sheetId,title,gridProperties)"})],
+            "시트 크기 확인",
+        )
+        props = next((s["properties"] for s in meta.get("sheets", []) if s["properties"].get("title") == self.camp.tab),
+                     None)
+        if not props:
+            raise CampaignError(f"탭을 찾지 못했습니다: {self.camp.tab}")
+        have = props.get("gridProperties", {}).get("columnCount", 0)
+        if have >= need:
+            return
+        self.gws.ok(
+            ["sheets", "spreadsheets", "batchUpdate", "--params", json.dumps({"spreadsheetId": self.sheet_id}),
+             "--json", json.dumps({"requests": [{"appendDimension": {"sheetId": props["sheetId"], "dimension": "COLUMNS",
+                                                                     "length": need - have}}]})],
+            "시트 열 늘리기",
+        )
 
     def update(self, row_idx: int, values: dict):
         """values: {열 이름: 값}. 한 행의 여러 칸을 한 번에 쓴다."""
@@ -642,6 +664,12 @@ def evaluate(camp: Campaign, roster: Roster, journal: Journal):
         res = {"idx": i, "row": row_no, "email": email, "name": name, "segment": seg, "status": status}
         if not any(roster.get(i, c) for c in range(len(roster.header))):
             continue  # 완전히 빈 행
+        if status in (ST_SKIP, ST_CHECK):
+            # 사람이 정한 제외·확인 필요는 중복·보냄 판정보다 먼저(시트를 보류로 되돌리지 않는다)
+            res["decision"] = "skip"
+            res["why"] = status
+            results.append(res)
+            continue
         k = key_for(camp, email) if email else None
         low = email.lower()
         if email and low in seen:
@@ -655,11 +683,6 @@ def evaluate(camp: Campaign, roster: Roster, journal: Journal):
             res["decision"] = "skip"
             res["why"] = "이미 보냄"
             res["journal_sent"] = sent.get(k)
-            results.append(res)
-            continue
-        if status in (ST_SKIP, ST_CHECK):
-            res["decision"] = "skip"
-            res["why"] = status
             results.append(res)
             continue
         reason = None
@@ -934,8 +957,14 @@ def cmd_test(a):
     to = a.to or camp.test_to or account
     if not to:
         raise CampaignError("테스트 받을 주소를 알 수 없습니다(--to 또는 test_to).")
+    if a.segment:
+        unknown = [x for x in a.segment if x not in camp.segments]
+        if unknown:
+            raise CampaignError(f"campaign.md 에 없는 세그먼트: {', '.join(unknown)}")
     picks, seen = [], set()
     for r in results:
+        if a.segment and r.get("segment") not in a.segment:
+            continue
         if r["decision"] == "send" and r["segment"] not in seen:
             seen.add(r["segment"])
             picks.append(r)
@@ -1258,6 +1287,7 @@ def main(argv=None):
     s.add_argument("folder")
     s.add_argument("--to")
     s.add_argument("--count", type=int, default=3)
+    s.add_argument("--segment", action="append", help="이 세그먼트만 테스트(반복 가능)")
     s.set_defaults(fn=cmd_test)
 
     s = sub.add_parser("plan", help="발송 계획과 승인 토큰")

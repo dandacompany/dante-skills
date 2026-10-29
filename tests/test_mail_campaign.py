@@ -122,6 +122,32 @@ class MailCampaignTest(unittest.TestCase):
         self.assertEqual(st["w@example.com"], ("", ""))
         self.assertEqual(st["x@example.com"], ("보류", "빈 칸(회차)"))
 
+    def test_explicit_skip_wins_over_duplicate(self):
+        self.run_cmd("check", str(self.dir))
+        rows = self.sheet()
+        header = list(rows[0].keys())
+        for r in rows:
+            if r["이름"] == "가나2":
+                r["발송 상태"] = "제외"
+                r["보류 사유"] = ""
+        with (self.dir / "roster.csv").open("w", encoding="utf-8-sig", newline="") as f:
+            w = csv.DictWriter(f, fieldnames=header)
+            w.writeheader()
+            w.writerows(rows)
+        rc, out = self.run_cmd("check", str(self.dir))
+        dup = [r for r in self.sheet() if r["이름"] == "가나2"][0]
+        self.assertEqual((dup["발송 상태"], dup["보류 사유"]), ("제외", ""))
+        self.assertIn("제외", out)
+
+    def test_test_send_single_segment(self):
+        rc, out = self.run_cmd("test", str(self.dir), "--segment", "대기")
+        self.assertEqual(rc, 0, out)
+        sends = [c for c in self.calls() if c[:2] == ["gmail", "+send"]]
+        self.assertEqual(len(sends), 1)
+        self.assertIn("대기", sends[0][sends[0].index("--subject") + 1])
+        rc, out = self.run_cmd("test", str(self.dir), "--segment", "없는것")
+        self.assertEqual(rc, 1)
+
     def test_ad_signal_blocks_transactional(self):
         self.write(kind="안내", extra="\n지금 10% 할인 쿠폰도 드려요.")
         rc, out = self.run_cmd("check", str(self.dir))
