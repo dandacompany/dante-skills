@@ -25,7 +25,7 @@ python3 "$MW" --version
 
 | 단계 | 명령 | 하는 일 |
 |---|---|---|
-| 1 감시 만들기 | `init <이름> --query '<Gmail 검색식>' [--attach-ext hwp,hwpx]` | 조건 저장. 지금 이미 있는 메일은 본 것으로 표시(`--include-existing` 이면 처리 대상) |
+| 1 감시 만들기(이름은 영문·숫자·-·_ 권장, 파일·예약 이름에 들어간다) | `init <이름> --query '<Gmail 검색식>' [--attach-ext hwp,hwpx]` | 조건 저장. 지금 이미 있는 메일은 본 것으로 표시(`--include-existing` 이면 처리 대상) |
 | 2 시험 | `check <이름>` | 마지막 줄이 `{"wakeAgent": false}` 또는 `{"wakeAgent": true, "context": {...}}` |
 | 3 예약 설치 | `install <이름> --every 5m --skill <붙일 스킬>` | `${HERMES_HOME:-~/.hermes}/scripts/mail-watch-<이름>.py` 를 만들고 `hermes cron create …` 명령을 출력 |
 | 4 예약 | 출력된 `hermes cron create …` | **사용자에게 보여 주고 확인받은 뒤** 실행한다 |
@@ -48,11 +48,11 @@ Hermes cron 은 사전 점검 스크립트를 **실행 중인 프로필의 홈**
 ## 예약 예시
 
 ```bash
-python3 "$MW" init 공문 --query 'in:inbox -from:me' --attach-ext hwp,hwpx
-python3 "$MW" install 공문 --every 5m --skill official-reply \
-  --prompt "mail-watch 가 넘긴 공문 메일마다 official-reply 스킬로 회신 묶음 초안을 만들고, 끝나면 mail_watch.py ack 공문 <id> 를 실행해. 메일은 보내지 마."
+python3 "$MW" init official-letters --query 'in:inbox -from:me' --attach-ext hwp,hwpx
+python3 "$MW" install official-letters --every 5m --skill official-reply \
+  --prompt "mail-watch 가 넘긴 공문 메일마다 official-reply 스킬로 회신 묶음 초안을 만들고, 끝나면 mail_watch.py ack official-letters <id> 를 실행해. 메일은 보내지 마."
 # 출력된 명령을 사용자 확인 뒤 실행:
-hermes cron create 'every 5m' '<프롬프트>' --name mail-watch-공문 --script mail-watch-공문.py --skill official-reply --deliver origin
+hermes cron create 'every 5m' '<프롬프트>' --name mail-watch-official-letters --script mail-watch-official-letters.py --skill official-reply --deliver origin
 ```
 
 - `--deliver origin` 이면 예약을 만든 대화(Slack 등)로 결과가 간다. 로컬에만 남기려면 `local`.
