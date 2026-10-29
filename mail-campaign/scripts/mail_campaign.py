@@ -253,13 +253,34 @@ def resolve_gws() -> list[str]:
         for root in roots:
             bridge = root / "skills" / "productivity" / "google-workspace" / "scripts" / "gws_bridge.py"
             if bridge.exists():
-                return [sys.executable, str(bridge)]
+                return [bridge_python(home), str(bridge)]
     if shutil.which("gws"):
         return ["gws"]
     raise CampaignError(
         "gws CLI 를 찾지 못했습니다. `npm i -g @googleworkspace/cli` 로 설치하세요"
         "(Hermes 도 gws_bridge.py 가 내부에서 gws 를 실행하므로 설치가 필요합니다)."
     )
+
+
+def bridge_python(home: Path) -> str:
+    """gws_bridge.py 는 `datetime.UTC` 를 써서 Python 3.11 이상이 필요하다.
+    시스템 python3 가 더 낮으면(macOS 기본 3.9) Hermes 자체 venv 의 파이썬을 쓴다."""
+    if sys.version_info >= (3, 11):
+        return sys.executable
+    cands = []
+    for root in dict.fromkeys([home, Path.home() / ".hermes"]):
+        cands += sorted(root.glob("installs/*/environments/*/venv/bin/python"), key=lambda p: p.stat().st_mtime,
+                        reverse=True)
+    cands += [Path(p) for n in ("python3.14", "python3.13", "python3.12", "python3.11") if (p := shutil.which(n))]
+    for c in cands:
+        try:
+            ok = subprocess.run([str(c), "-c", "import sys; sys.exit(sys.version_info < (3, 11))"],
+                                capture_output=True, timeout=10).returncode == 0
+        except (OSError, subprocess.TimeoutExpired):
+            ok = False
+        if ok:
+            return str(c)
+    raise CampaignError("gws_bridge.py 를 실행할 Python 3.11 이상을 찾지 못했습니다. MAIL_CAMPAIGN_GWS 로 직접 지정하세요.")
 
 
 class Gws:
