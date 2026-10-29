@@ -1,31 +1,38 @@
 # 칸반 선택 모드(Hermes)
 
-> **미실측.** 아래는 Hermes v0.22.5 CLI 도움말과 칸반 문서를 근거로 한 설계이고 실제 캠페인으로 돌려 보지 않았다. 기본 흐름(SKILL.md 9단계)만으로 충분하면 쓰지 않는다.
+> 일부만 실측했다(2026-10-29, Hermes v0.22.5). cron 세션이 터미널의 `hermes kanban comment` 로 카드에 코멘트를 남기는 것은 확인했다. 세그먼트 카드 검토 흐름 전체는 돌려 보지 않았다. 기본 흐름(SKILL.md 9단계)만으로 충분하면 쓰지 않는다.
 
-행마다 카드 한 장을 두고, 사람이 review 열에서 승인한 카드만 보내는 방식이다. 수십 통 규모에서 "누가 언제 무엇을 승인했나"를 보드에 남기고 싶을 때 쓴다.
+세그먼트마다 카드 한 장, 보류 행 카드 한 장을 두고 사람이 카드를 검토한다. 수십 통 캠페인이어도 검토는 「세그먼트 수 + 1」번으로 끝난다. 행마다 카드를 만드는 방식은 30행이면 30번 클릭해야 하고 카드마다 워커가 떠서 권하지 않는다.
 
 ## 전제
 
-- 채팅 봇이 카드를 만들려면 `kanban` 툴셋을 이름으로 켜야 한다: `hermes -p <프로필> tools enable kanban --platform <플랫폼>`
-- 사람만 검수하게 하려면 `config.yaml` 에 `kanban.review_dispatch: false`
-- 디스패처는 게이트웨이가 떠 있어야 돈다.
+- 채팅 봇이 칸반 도구로 카드를 만들려면 `kanban` 툴셋을 이름으로 켠다: `hermes -p <프로필> tools enable kanban --platform <플랫폼>`. 툴셋 없이 터미널의 `hermes kanban …` 명령으로도 된다(cron 에서 확인함).
+- 사람만 검수하게 하려면 `config.yaml` 에 `kanban.review_dispatch: false`. 워커가 카드를 집어 가지 않게 하려면 `--initial-status blocked` 로 만든다.
 
 ## 흐름
 
-1. `check` 까지는 기본 흐름과 같다(보류 행은 카드를 만들지 않는다).
-2. 보낼 행마다 카드를 만든다. **멱등 키 = 캠페인 이름 + 이메일**(스크립트 저널의 키와 같다). 같은 키로 다시 만들면 새 카드가 생기지 않는다.
+1. `check` 와 `render` 까지는 기본 흐름과 같다.
+2. 카드를 만든다. 멱등 키는 `<캠페인 이름>:seg:<세그먼트>` 와 `<캠페인 이름>:holds` 를 쓴다.
 
    ```bash
-   hermes kanban create "메일: <이름> (행 5)" --tenant "<캠페인 이름>" \
-     --idempotency-key "<캠페인 이름>:<이메일 소문자>" --skill mail-campaign \
-     --body "$(python3 "$MC" preview <폴더> --row 5)"
+   hermes kanban create "메일 [연동 완료] 13통 — 견본 검토" --tenant "<캠페인 이름>" --initial-status blocked \
+     --idempotency-key "<캠페인 이름>:seg:연동 완료" --body "$(python3 "$MC" preview <폴더> --row <그 세그먼트 첫 행>)"
+   hermes kanban create "메일 보류 3행 — 사유 확인" --tenant "<캠페인 이름>" --initial-status blocked \
+     --idempotency-key "<캠페인 이름>:holds" --body "$(python3 "$MC" check <폴더> --no-write)"
    ```
 
-3. 사람이 카드 본문의 렌더 결과를 보고 승인(review → done)한다.
-4. 승인된 행만 보낸다. 승인되지 않은 행은 시트 `발송 상태` 에 `제외` 를 적어 이번 plan 에서 빼고, `plan` → 승인 토큰 → `send` 는 기본 흐름 그대로 한다. 칸반 승인은 행 단위 검토이고, 마지막 일괄 승인 게이트를 대신하지 않는다.
-5. "N일 뒤 답장 확인" 은 v0.22.5 `kanban create` 에 시각 지정 옵션이 없어서(`kanban schedule` 은 사유만 남긴다) **cron 예약으로 한다**: `hermes cron add` 로 N일 뒤 `replies` → 분류 → `classify` 를 돌리게 하고 결과만 보고하게 한다. 후속 메일 발송은 cron 에서 하지 않는다(초안까지만).
+3. 사람이 세그먼트 카드를 검토해 승인하면 done 으로 옮기고, 고칠 점은 코멘트로 남긴다. 보류 카드는 시트를 고친 뒤 `check` 를 다시 돌리고 닫는다.
+4. 승인되지 않은 세그먼트의 행은 시트 `발송 상태` 에 `제외` 를 적는다. 그다음 `plan` → 승인 토큰 → `send` 는 기본 흐름 그대로 한다. 카드 승인은 문구 검토이고, 마지막 일괄 승인 게이트를 대신하지 않는다.
+5. 「N일 뒤 답장 확인」은 칸반으로 하지 않는다. v0.22.5 의 `kanban schedule` 은 사유만 남기고 타이머를 만들지 않는다. **cron 으로 한다**:
+
+   ```bash
+   hermes cron create "every 1d" "mail-campaign 스킬로 <폴더> 의 답장을 replies 로 수거해 분류하고 classify 로 기록한 뒤, 요약을 hermes kanban comment <카드 id> 로 남겨. 메일과 초안은 만들지 마." \
+     --skill mail-campaign --deliver local
+   ```
+
+   후속 메일 발송은 cron 에서 하지 않는다(초안까지만). 스케줄러는 게이트웨이가 떠 있어야 저절로 돈다.
 
 ## 주의
 
 - 칸반 워커 프로세스는 백그라운드 자기개선(refine)을 하지 않는다. 운영 규칙 학습은 사람과 나누는 대화에서 `/refine` 으로 한다.
-- 워커끼리는 서로의 카드를 못 보므로 톤·서명·금지 표현은 campaign.md 에 두고 카드 본문에는 렌더 결과만 넣는다.
+- 워커끼리는 서로의 카드를 못 보므로 톤·서명·금지 표현은 campaign.md 에 두고, 카드 본문에는 렌더 결과만 넣는다.
