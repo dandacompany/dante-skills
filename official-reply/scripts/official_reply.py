@@ -17,7 +17,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-VERSION = "1.0.0"
+VERSION = "1.1.0"
 DOC_EXT = {".hwp", ".hwpx", ".pdf", ".docx", ".xlsx"}
 
 
@@ -250,6 +250,22 @@ def attach_value(items: list[dict]) -> str:
     return "\n".join(lines)
 
 
+def norm_lines(text: str) -> list[str]:
+    return [re.sub(r"\s+", " ", l).strip() for l in text.splitlines() if l.strip()]
+
+
+def linebreak_paragraphs(hwpx: Path) -> int:
+    """본문에 강제 줄바꿈(<hp:lineBreak/>)이 든 문단 수. kordoc patch 는 이런 문단을 고치지 못한다."""
+    import zipfile
+    n = 0
+    with zipfile.ZipFile(hwpx) as z:
+        for name in z.namelist():
+            if re.fullmatch(r"Contents/section\d+\.xml", name):
+                xml = z.read(name).decode("utf-8", "replace")
+                n += sum(1 for p in re.findall(r"<hp:p\b.*?</hp:p>", xml, re.S) if "<hp:lineBreak/>" in p)
+    return n
+
+
 def read_text(path: Path) -> str:
     return kordoc([str(path)], check=True).stdout
 
@@ -276,13 +292,22 @@ def cmd_letter(a):
         sample = resolve_in(work, a.sample)
         p = kordoc(["patch", str(sample), a.md, "-o", str(target)], check=False)
         msg = (p.stderr or "") + (p.stdout or "")
-        if p.returncode == 2 or "SKIP" in msg:
-            target.unlink(missing_ok=True)
-            raise ReplyError("견본에 반영하지 못한 수정이 있어 회신 공문을 만들지 않았습니다(kordoc patch 종료 코드 2):\n"
-                             + "\n".join(l for l in msg.splitlines() if "SKIP" in l or "잔차" in l)
-                             + "\n강제 줄바꿈이 든 문단은 문단을 나누거나, 일반기안문 경로(--json)를 쓰세요.")
-        if p.returncode != 0:
+        skips = [l for l in msg.splitlines() if "SKIP" in l or "잔차" in l]
+        if p.returncode not in (0, 2):
             raise ReplyError(f"kordoc patch 실패:\n{msg.strip()[-1200:]}")
+        if p.returncode == 2 or skips:
+            # kordoc 의 「완전 일치」 문구를 믿지 않고, 결과를 다시 읽어 고친 원고와 직접 대조한다.
+            got = kordoc([str(target), "--keep-layout-tables"], check=False).stdout if target.exists() else ""
+            want = Path(a.md).read_text(encoding="utf-8")
+            if not target.exists() or norm_lines(got) != norm_lines(want):
+                target.unlink(missing_ok=True)
+                raise ReplyError("견본에 반영하지 못한 수정이 있어 회신 공문을 만들지 않았습니다(kordoc patch 종료 코드 "
+                                 f"{p.returncode}):\n" + "\n".join(skips)
+                                 + "\n본문 문단 수를 견본과 같게 맞추거나(항목을 합치거나 나눠서), 강제 줄바꿈이 든 견본이면 "
+                                 "`sample-split` 으로 문단을 나눈 뒤 다시 하세요. 안 되면 일반기안문 경로(--json)를 쓰세요.")
+            print("⚠ kordoc 이 일부 문단을 건너뛰었다고 보고했지만, 결과를 다시 읽어 고친 원고와 글자까지 같음을 확인했습니다:")
+            for l in skips:
+                print("   " + l.strip())
         mode = "patch"
     else:
         spec = json.loads(Path(a.json).read_text(encoding="utf-8"))
@@ -311,8 +336,59 @@ def cmd_sample_md(a):
     sample = resolve_in(work, a.sample)
     _, out = folders(work)
     md = out / "견본-편집.md"
+    if sample.suffix.lower() == ".hwpx":
+        n = linebreak_paragraphs(sample)
+        if n:
+            print(f"⚠ 견본에 강제 줄바꿈이 든 문단이 {n}개 있습니다. kordoc patch 는 이런 문단을 고치지 못합니다"
+                  f"(일반기안문 서식으로 만든 견본에 흔함). 먼저 `sample-split {a.work} {sample.name}` 으로 문단을 나누세요.")
     kordoc([str(sample), "--keep-layout-tables", "-o", str(md)])
-    print(f"견본을 마크다운으로 읽었습니다: {md}\n문단 구조는 그대로 두고 글자만 고친 뒤 `letter --sample {sample.name} --md {md}`.")
+    print(f"견본을 마크다운으로 읽었습니다: {md}\n문단 수는 견본과 같게 두고 글자만 고친 뒤 "
+          f"`letter --sample {sample.name} --md {md}`.")
+    return 0
+
+
+def cmd_sample_split(a):
+    """견본의 강제 줄바꿈 문단을 줄마다 보통 문단으로 나눈 사본을 만든다(원본은 그대로)."""
+    import zipfile
+    work = Path(a.work).expanduser().resolve()
+    load_manifest(work)
+    sample = resolve_in(work, a.sample)
+    _, out = folders(work)
+    dst = out / f"{sample.stem}-문단나눔.hwpx"
+    total = 0
+
+    def split(m):
+        nonlocal total
+        para = m.group(0)
+        if "<hp:lineBreak/>" not in para or para.count("<hp:t>") != 1:
+            return para
+        head = re.match(r"(<hp:p\b[^>]*>)", para).group(1)
+        run = re.search(r'<hp:run charPrIDRef="(\d+)">', para)
+        text = re.search(r"<hp:t>(.*?)</hp:t>", para, re.S).group(1)
+        if not run:
+            return para
+        lines = text.split("<hp:lineBreak/>")
+        total += len(lines) - 1
+        pid = re.search(r'id="(\d+)"', head)
+        out_paras = []
+        for i, ln in enumerate(lines):
+            h = head if not pid else head.replace(f'id="{pid.group(1)}"', f'id="{int(pid.group(1)) * 100 + i}"', 1)
+            out_paras.append(f'{h}<hp:run charPrIDRef="{run.group(1)}"><hp:t>{ln}</hp:t></hp:run></hp:p>')
+        return "".join(out_paras)
+
+    with zipfile.ZipFile(sample) as zin, zipfile.ZipFile(dst, "w") as zout:
+        for it in zin.infolist():
+            data = zin.read(it.filename)
+            if re.fullmatch(r"Contents/section\d+\.xml", it.filename):
+                data = re.sub(r"<hp:p\b.*?</hp:p>", split, data.decode("utf-8"), flags=re.S).encode("utf-8")
+            zout.writestr(it, data, compress_type=zipfile.ZIP_STORED if it.filename == "mimetype" else zipfile.ZIP_DEFLATED)
+    v = kordoc(["validate", str(dst)], check=False)
+    if v.returncode != 0:
+        dst.unlink(missing_ok=True)
+        raise ReplyError("문단을 나눈 견본이 구조 검증을 통과하지 못했습니다. 한글에서 견본 본문을 줄마다 Enter 로 나눠 저장하세요.")
+    left = linebreak_paragraphs(dst)
+    print(f"문단 나눔: 줄바꿈 {total}개 → 새 문단. 결과: {dst}" + (f" (아직 남은 줄바꿈 문단 {left}개)" if left else ""))
+    print(f"다음: `sample-md {a.work} {dst.name}`")
     return 0
 
 
@@ -345,7 +421,7 @@ def cmd_finish(a):
         sealed = out / "회신공문-직인.hwpx"
         mode = a.seal_mode or ("overlap" if anchor == "(인)" else "right")
         kordoc(["seal", str(letter), "--image", str(Path(a.seal).expanduser()), "--anchor", anchor, "--mode", mode,
-                "-o", str(sealed), "--silent"])
+                "--size-mm", str(a.seal_size), "-o", str(sealed), "--silent"])
         v = kordoc(["validate", str(sealed)], check=False)
         if v.returncode != 0:
             raise ReplyError("직인을 넣은 뒤 구조 검증에 실패했습니다.")
@@ -426,6 +502,11 @@ def main(argv=None):
     s.add_argument("sample")
     s.set_defaults(fn=cmd_sample_md)
 
+    s = sub.add_parser("sample-split", help="견본의 강제 줄바꿈 문단을 보통 문단으로 나눈 사본 만들기")
+    s.add_argument("work")
+    s.add_argument("sample")
+    s.set_defaults(fn=cmd_sample_split)
+
     s = sub.add_parser("letter", help="회신 공문 만들기(일반기안문 --json 또는 견본 --sample --md)")
     s.add_argument("work")
     s.add_argument("--json", help="일반기안문 칸 JSON(붙임목록 포함 가능)")
@@ -438,6 +519,7 @@ def main(argv=None):
     s.add_argument("--seal", help="직인 이미지(투명 PNG)")
     s.add_argument("--anchor", help="직인 위치 문구(기본 '(인)', 없으면 발신명의 문구)")
     s.add_argument("--seal-mode", choices=["overlap", "right", "auto"])
+    s.add_argument("--seal-size", type=float, default=15.0, help="직인 한 변 크기(mm). 기본 15")
     s.set_defaults(fn=cmd_finish)
 
     s = sub.add_parser("draft", help="Gmail 회신 초안(보내지 않음)")

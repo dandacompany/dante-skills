@@ -1,6 +1,7 @@
 """official-reply 테스트. 순수 함수는 항상, kordoc 이 있으면 실제 문서 경로까지."""
 import importlib.util
 import json
+import os
 import shutil
 import subprocess
 import sys
@@ -72,6 +73,56 @@ class KordocFlowTest(unittest.TestCase):
         m = json.loads((w / "묶음.json").read_text(encoding="utf-8"))
         self.assertTrue((w / "회신" / m["final"]["preview"]).exists())
         self.assertEqual(m["final"]["attachments"], ["양식-작성.hwpx"])
+
+
+@unittest.skipUnless(shutil.which("kordoc"), "kordoc 없음")
+class PatchExitTwoTest(unittest.TestCase):
+    """kordoc patch 가 종료 코드 2 를 내도, 결과가 고친 원고와 같으면 통과·다르면 거부."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.t = Path(self.tmp.name)
+        letter = {"행정기관명": "예시상사", "수신자": "협력기관장", "제목": "협력 제안", "본문": "본문 첫 문단",
+                  "붙임": "제안서", "발신명의": "예시상사 대표 (인)"}
+        (self.t / "s.json").write_text(json.dumps(letter, ensure_ascii=False))
+        subprocess.run(["kordoc", "fill", "--template", "gian", "-j", str(self.t / "s.json"), "-o",
+                        str(self.t / "견본.hwpx"), "--silent"], check=True)
+        # patch 만 종료 코드 2 + SKIP 문구를 덧붙이는 래퍼(결과 파일은 진짜 kordoc 이 만든다)
+        (self.t / "k.py").write_text(
+            "import subprocess,sys\n"
+            "p=subprocess.run(['kordoc',*sys.argv[1:]])\n"
+            "if sys.argv[1]=='patch':\n"
+            "    print('[kordoc] ⚠️ SKIP: 개체·구역 정의·쪽 나눔이 든 문단', file=sys.stderr); sys.exit(2)\n"
+            "sys.exit(p.returncode)\n")
+        self.env = dict(os.environ, OFFICIAL_REPLY_KORDOC=f"{sys.executable} {self.t / 'k.py'}")
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def run_cmd(self, *args):
+        p = subprocess.run([sys.executable, str(SCRIPT), *args], capture_output=True, text=True, env=self.env)
+        return p.returncode, p.stdout + p.stderr
+
+    def test_accept_when_identical_reject_when_not(self):
+        w = self.t / "job"
+        self.run_cmd("init", str(w), str(self.t / "견본.hwpx"))
+        self.run_cmd("sample-md", str(w), "견본.hwpx")
+        md = w / "회신" / "견본-편집.md"
+        md.write_text(md.read_text(encoding="utf-8").replace("협력 제안", "서류 보완 제출"), encoding="utf-8")
+        rc, out = self.run_cmd("letter", str(w), "--sample", "견본.hwpx", "--md", str(md))
+        self.assertEqual(rc, 0, out)
+        self.assertIn("글자까지 같음", out)
+        md.write_text(md.read_text(encoding="utf-8") + "\n\n원고에만 있는 문단\n", encoding="utf-8")
+        # 이번에는 patch 가 견본을 그대로 내놓고(수정 미반영) 종료 코드 2 를 내는 상황을 흉내 낸다
+        (self.t / "k.py").write_text(
+            "import shutil,subprocess,sys\n"
+            "if sys.argv[1]=='patch':\n"
+            "    shutil.copyfile(sys.argv[2], sys.argv[sys.argv.index('-o')+1]); sys.exit(2)\n"
+            "sys.exit(subprocess.run(['kordoc',*sys.argv[1:]]).returncode)\n")
+        rc, out = self.run_cmd("letter", str(w), "--sample", "견본.hwpx", "--md", str(md))
+        self.assertEqual(rc, 1, out)
+        self.assertIn("문단 수를 견본과 같게", out)
+        self.assertFalse((w / "회신" / "회신공문.hwpx").exists())
 
 
 if __name__ == "__main__":

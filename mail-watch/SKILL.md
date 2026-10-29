@@ -39,6 +39,8 @@ python3 "$MW" --version
 
 기본 검색 기간은 `--window 7d`(newer_than)이고, 한 번에 최대 `--max 20` 통을 본다.
 
+`-from:me` 는 내가 보낸 메일을 뺀다. 내 주소나 내 `+별칭` 으로 시험 메일을 보내 확인할 때는 `-from:me` 를 빼고 제목 키워드로 좁힌다(예: `--query 'in:inbox subject:"[실습 공문]"'`).
+
 ## Hermes 프로필
 
 Hermes cron 은 사전 점검 스크립트를 **실행 중인 프로필의 홈** 아래 `scripts/` 에서 찾는다. 이 스크립트는 감시 폴더와 래퍼를 `HERMES_HOME`(프로필 홈) 기준으로 두므로, 프로필 대화 안에서 부르면 그 프로필 아래에 놓인다. 밖(일반 터미널)에서 부를 때는 그 프로필 홈을 환경변수로 준다: `HERMES_HOME=~/.hermes/profiles/<이름> python3 "$MW" init …`. 래퍼는 설치할 때의 홈을 기억하고, 출력되는 예약 명령에도 `hermes -p <이름>` 이 붙는다.
