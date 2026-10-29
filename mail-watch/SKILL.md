@@ -27,7 +27,7 @@ python3 "$MW" --version
 |---|---|---|
 | 1 감시 만들기 | `init <이름> --query '<Gmail 검색식>' [--attach-ext hwp,hwpx]` | 조건 저장. 지금 이미 있는 메일은 본 것으로 표시(`--include-existing` 이면 처리 대상) |
 | 2 시험 | `check <이름>` | 마지막 줄이 `{"wakeAgent": false}` 또는 `{"wakeAgent": true, "context": {...}}` |
-| 3 예약 설치 | `install <이름> --every 5m --skill <붙일 스킬>` | `~/.hermes/scripts/mail-watch-<이름>.py` 를 만들고 `hermes cron create …` 명령을 출력 |
+| 3 예약 설치 | `install <이름> --every 5m --skill <붙일 스킬>` | `${HERMES_HOME:-~/.hermes}/scripts/mail-watch-<이름>.py` 를 만들고 `hermes cron create …` 명령을 출력 |
 | 4 예약 | 출력된 `hermes cron create …` | **사용자에게 보여 주고 확인받은 뒤** 실행한다 |
 | 5 처리 | (깨어난 에이전트) | `context.messages` 의 각 메일을 처리하고 `ack <이름> <id> …` |
 
@@ -38,6 +38,12 @@ python3 "$MW" --version
 - 제목 키워드: `--query 'in:inbox subject:(견적 OR 발주)'`
 
 기본 검색 기간은 `--window 7d`(newer_than)이고, 한 번에 최대 `--max 20` 통을 본다.
+
+## Hermes 프로필
+
+Hermes cron 은 사전 점검 스크립트를 **실행 중인 프로필의 홈** 아래 `scripts/` 에서 찾는다. 이 스크립트는 감시 폴더와 래퍼를 `HERMES_HOME`(프로필 홈) 기준으로 두므로, 프로필 대화 안에서 부르면 그 프로필 아래에 놓인다. 밖에서 부를 때는 `--profile <이름>` 을 명령 앞에 붙인다(예: `python3 "$MW" --profile mybots-milo init …`). 래퍼는 설치할 때의 홈을 기억하고, 출력되는 예약 명령에도 `hermes -p <이름>` 이 붙는다.
+
+스킬을 허브에서 설치하는 것만으로는 래퍼가 생기지 않는다. 래퍼는 첫 사용 때 `install` 명령으로 만든다(사용자 입력 없이 끝난다).
 
 ## 예약 예시
 
