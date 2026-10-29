@@ -88,9 +88,10 @@ description: Google Sheets(또는 CSV) 명단으로 세그먼트별 개인화 �
 - `references/gws-and-hermes.md` — gws 실행기, Hermes OAuth 재사용, Gmail 한도
 - `references/kanban-mode.md` — Hermes 칸반 선택 모드
 - `references/credits.md` — 참고한 공개 스킬과 라이선스
+- `references/lessons-examples.md` — 「운영하며 더한 규칙」에 더할 것과 더하지 말 것
 
 ## 운영하며 더한 규칙
 
-여러 캠페인에 두루 통하는 일반 규칙만 이 절에 한 줄씩 더한다(날짜·근거 한 줄 포함). 받는 사람 개인에 관한 사실은 여기에 쓰지 않고 시트에 쓴다. Hermes 에서는 `/refine` 으로 이 절에 반영할 수 있다.
+여러 캠페인에 두루 통하는 일반 규칙만 이 절에 한 줄씩 더한다(날짜·근거 한 줄 포함). 받는 사람 개인에 관한 사실은 여기에 쓰지 않고 시트에 쓴다. Hermes 에서는 `/refine` 으로 이 절에 반영할 수 있다. 어떤 규칙이 여기에 어울리는지는 `references/lessons-examples.md` 를 본다.
 
-- 답장으로 담당자·호칭 정정이 오면 시트의 해당 칸을 고치고(사용자 확인 후) 다음 발송부터 적용한다.
+(아직 없음)

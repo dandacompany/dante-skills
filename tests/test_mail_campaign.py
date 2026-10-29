@@ -113,6 +113,15 @@ class MailCampaignTest(unittest.TestCase):
         self.assertIn("보낼 대상 3행", out)
         self.assertEqual(self.calls(), [], "CSV check 는 gws 를 부르지 않는다")
 
+    def test_other_segment_variables_do_not_hold(self):
+        # '대기' 세그먼트는 {{회차}} 를 쓰지 않으므로 회차가 비어도 보류가 아니다
+        rows = [ROWS[0], ["w@example.com", "대기자", "대기", "", "Y"], ["x@example.com", "확정자", "확정", "", "Y"]]
+        self.write(rows=rows)
+        rc, out = self.run_cmd("check", str(self.dir))
+        st = {r["이메일"]: (r["발송 상태"], r["보류 사유"]) for r in self.sheet()}
+        self.assertEqual(st["w@example.com"], ("", ""))
+        self.assertEqual(st["x@example.com"], ("보류", "빈 칸(회차)"))
+
     def test_ad_signal_blocks_transactional(self):
         self.write(kind="안내", extra="\n지금 10% 할인 쿠폰도 드려요.")
         rc, out = self.run_cmd("check", str(self.dir))
