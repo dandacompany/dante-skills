@@ -84,12 +84,12 @@ class MailWatchTest(unittest.TestCase):
         self.assertEqual(wakes, [False, False, True, False])
 
     def test_profile_scopes_state_and_wrapper(self):
-        env = dict(self.env)
-        env.pop("MAIL_WATCH_HOME")
-        self.run_cmd("--profile", "bot-a", "init", "w", "--query", "in:inbox", env=env)
-        rc, out = self.run_cmd("--profile", "bot-a", "install", "w", env=env)
-        self.assertEqual(rc, 0, out)
         prof = Path(self.env["HERMES_HOME"]) / "profiles" / "bot-a"
+        env = dict(self.env, HERMES_HOME=str(prof))
+        env.pop("MAIL_WATCH_HOME")
+        self.run_cmd("init", "w", "--query", "in:inbox", env=env)
+        rc, out = self.run_cmd("install", "w", env=env)
+        self.assertEqual(rc, 0, out)
         self.assertTrue((prof / "mail-watch" / "w" / "watch.json").exists())
         self.assertTrue((prof / "scripts" / "mail-watch-w.py").exists())
         self.assertIn("hermes -p bot-a cron create", out)

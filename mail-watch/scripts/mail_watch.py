@@ -349,7 +349,6 @@ def cmd_install(a):
 def main(argv=None):
     p = argparse.ArgumentParser(prog="mail_watch.py", description="Gmail 조건 감시(읽기 전용)")
     p.add_argument("--version", action="version", version=VERSION)
-    p.add_argument("--profile", help="Hermes 프로필 이름. 감시 폴더와 사전 점검 스크립트를 그 프로필 홈 아래에 둔다")
     sub = p.add_subparsers(dest="cmd", required=True)
 
     s = sub.add_parser("init", help="감시 만들기")
@@ -391,13 +390,6 @@ def main(argv=None):
     s.set_defaults(fn=cmd_install)
 
     a = p.parse_args(argv)
-    if a.profile:
-        if not re.fullmatch(r"[A-Za-z0-9_-]{1,64}", a.profile):
-            print("✖ 프로필 이름이 올바르지 않습니다.", file=sys.stderr)
-            return 1
-        base = Path(os.environ.get("HERMES_HOME", "").strip() or Path.home() / ".hermes")
-        root = base.parent.parent if base.parent.name == "profiles" else base
-        os.environ["HERMES_HOME"] = str(root / "profiles" / a.profile)
     try:
         return a.fn(a) or 0
     except WatchError as e:
