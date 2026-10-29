@@ -41,7 +41,7 @@ def watch_root() -> Path:
     env = os.environ.get("MAIL_WATCH_HOME", "").strip()
     if env:
         return Path(env)
-    if hermes_home().exists():
+    if os.environ.get("HERMES_HOME", "").strip() or hermes_home().exists():
         return hermes_home() / "mail-watch"
     base = Path(os.environ.get("XDG_STATE_HOME", "").strip() or Path.home() / ".local" / "state")
     return base / "mail-watch"
@@ -317,7 +317,8 @@ def cmd_fetch(a):
 
 WRAPPER = '''#!/usr/bin/env python3
 # mail-watch 사전 점검 래퍼 — `mail_watch.py install` 이 만들었다. 감시: {name}
-import runpy, sys
+import os, runpy, sys
+os.environ.setdefault("HERMES_HOME", {home!r})
 sys.argv = ["mail_watch.py", "check", {name!r}]
 runpy.run_path({script!r}, run_name="__main__")
 '''
@@ -329,14 +330,17 @@ def cmd_install(a):
     scripts = hermes_home() / "scripts"
     scripts.mkdir(parents=True, exist_ok=True)
     target = scripts / f"mail-watch-{a.name}.py"
-    target.write_text(WRAPPER.format(name=a.name, script=str(Path(__file__).resolve())), encoding="utf-8")
+    target.write_text(WRAPPER.format(name=a.name, script=str(Path(__file__).resolve()), home=str(hermes_home())),
+                      encoding="utf-8")
     target.chmod(0o755)
-    print(f"사전 점검 스크립트: {target}")
+    print(f"사전 점검 스크립트: {target}  (Hermes 홈: {hermes_home()})")
     skill = " ".join(f"--skill {shlex.quote(s)}" for s in (a.skill or []))
     prompt = a.prompt or (f"mail-watch 가 새 메일을 넘겼다. context.messages 의 각 메일을 처리하고, "
                           f"끝난 메일은 mail_watch.py ack {a.name} <id> 로 처리 완료 표시를 해. 메일은 보내지 마.")
     print("예약 명령(사용자 확인 뒤 실행):")
-    parts = ["hermes cron create", shlex.quote("every " + a.every), shlex.quote(prompt),
+    prof = os.environ.get("HERMES_HOME", "")
+    prof_flag = f"-p {Path(prof).name}" if Path(prof).parent.name == "profiles" else ""
+    parts = ["hermes", prof_flag, "cron create", shlex.quote("every " + a.every), shlex.quote(prompt),
              f"--name mail-watch-{a.name}", f"--script {shlex.quote(target.name)}", skill, f"--deliver {a.deliver}"]
     print("  " + " ".join(x for x in parts if x))
     return 0
@@ -345,6 +349,7 @@ def cmd_install(a):
 def main(argv=None):
     p = argparse.ArgumentParser(prog="mail_watch.py", description="Gmail 조건 감시(읽기 전용)")
     p.add_argument("--version", action="version", version=VERSION)
+    p.add_argument("--profile", help="Hermes 프로필 이름. 감시 폴더와 사전 점검 스크립트를 그 프로필 홈 아래에 둔다")
     sub = p.add_subparsers(dest="cmd", required=True)
 
     s = sub.add_parser("init", help="감시 만들기")
@@ -386,6 +391,13 @@ def main(argv=None):
     s.set_defaults(fn=cmd_install)
 
     a = p.parse_args(argv)
+    if a.profile:
+        if not re.fullmatch(r"[A-Za-z0-9_-]{1,64}", a.profile):
+            print("✖ 프로필 이름이 올바르지 않습니다.", file=sys.stderr)
+            return 1
+        base = Path(os.environ.get("HERMES_HOME", "").strip() or Path.home() / ".hermes")
+        root = base.parent.parent if base.parent.name == "profiles" else base
+        os.environ["HERMES_HOME"] = str(root / "profiles" / a.profile)
     try:
         return a.fn(a) or 0
     except WatchError as e:

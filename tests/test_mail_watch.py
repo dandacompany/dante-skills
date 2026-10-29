@@ -83,6 +83,17 @@ class MailWatchTest(unittest.TestCase):
         wakes = [self.last(self.run_cmd("check", "w", env=env)[1])["wakeAgent"] for _ in range(4)]
         self.assertEqual(wakes, [False, False, True, False])
 
+    def test_profile_scopes_state_and_wrapper(self):
+        env = dict(self.env)
+        env.pop("MAIL_WATCH_HOME")
+        self.run_cmd("--profile", "bot-a", "init", "w", "--query", "in:inbox", env=env)
+        rc, out = self.run_cmd("--profile", "bot-a", "install", "w", env=env)
+        self.assertEqual(rc, 0, out)
+        prof = Path(self.env["HERMES_HOME"]) / "profiles" / "bot-a"
+        self.assertTrue((prof / "mail-watch" / "w" / "watch.json").exists())
+        self.assertTrue((prof / "scripts" / "mail-watch-w.py").exists())
+        self.assertIn("hermes -p bot-a cron create", out)
+
     def test_missing_watch_is_silent(self):
         rc, out = self.run_cmd("check", "nope")
         self.assertEqual(rc, 0)
