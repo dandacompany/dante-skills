@@ -77,6 +77,7 @@ hermes skills install dandacompany/dante-skills/<skill-name>
 | --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
 | [brightdata-guide](./brightdata-guide/) | Bright Data 웹 수집 가이드(MCP + CLI 통합). MCP 도구가 있으면 MCP를, 없으면 터미널의 `bdata`/`brightdata` CLI로 검색·스크랩·구조화 추출. Hermes·Codex 등 범용. | `skills add dandacompany/dante-skills@brightdata-guide`<br>`hermes skills install dandacompany/dante-skills/brightdata-guide` |
 | [tally-api](./tally-api/)               | Tally.so 폼 플랫폼 REST API·웹훅 연동. 폼·제출·분석·워크스페이스 조회 및 웹훅 생성/서명검증. curl CLI 래퍼(`tally.sh`) + HMAC-SHA256 서명 검증 스크립트 동봉.  | `skills add dandacompany/dante-skills@tally-api`<br>`hermes skills install dandacompany/dante-skills/tally-api`               |
+| [mail-campaign](./mail-campaign/) | Google Sheets(또는 CSV) 명단 → 세그먼트별 개인화 메일을 gws CLI로 발송. 행 검증·보류, 초안, 내 주소 테스트, 승인 토큰 게이트, 간격·일일 상한 발송, 행별 상태·messageId 기록(재실행 시 중복 방지), 답장 수거·분류, **정보통신망법 제50조 광고성 판별**((광고)·수신동의·야간 차단). Hermes Google OAuth 재사용 — 추가 키 0개. 참고: Draft Machine(MIT-0)·outreach-composer(Apache-2.0)·consent-registry(Apache-2.0). | `skills add dandacompany/dante-skills@mail-campaign`<br>`hermes skills install dandacompany/dante-skills/mail-campaign` |
 
 ### 🎵 음악 · 미디어 생성
 
