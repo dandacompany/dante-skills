@@ -31,6 +31,9 @@ fail_to = [x for x in os.environ.get("FAKE_GWS_FAIL_TO", "").split(",") if x]
 crash_to = [x for x in os.environ.get("FAKE_GWS_CRASH_TO", "").split(",") if x]
 n = state["n"]
 
+if args[:1] == ["--version"]:
+    print("gws 0.0.0-fake")
+    sys.exit(0)
 if args[:3] == ["gmail", "users", "getProfile"]:
     out({"emailAddress": "me@example.com"})
 if args[:2] == ["gmail", "+send"]:

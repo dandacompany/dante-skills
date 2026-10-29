@@ -77,6 +77,19 @@ def bridge_python(home: Path) -> str:
     raise WatchError("gws_bridge.py 를 실행할 Python 3.11 이상을 찾지 못했습니다. MAIL_WATCH_GWS 로 지정하세요.")
 
 
+def find_gws_dir(home: Path):
+    """gws 실행 파일이 있는 폴더. PATH 에 없어도 Hermes 프로필 bin 등 흔한 설치 위치를 본다.
+    gws_bridge.py 는 PATH 에서만 gws 를 찾으므로, 찾은 폴더를 브리지 실행 PATH 앞에 넣는다."""
+    found = shutil.which("gws")
+    if found:
+        return str(Path(found).parent)
+    for d in (home / "bin", Path.home() / ".hermes" / "bin", Path.home() / ".local" / "bin",
+              Path.home() / ".npm-global" / "bin", Path("/opt/homebrew/bin"), Path("/usr/local/bin")):
+        if (d / "gws").is_file() and os.access(d / "gws", os.X_OK):
+            return str(d)
+    return None
+
+
 def resolve_gws() -> list[str]:
     env = (os.environ.get("MAIL_WATCH_GWS") or os.environ.get("MAIL_CAMPAIGN_GWS") or "").strip()
     if env:
@@ -86,9 +99,14 @@ def resolve_gws() -> list[str]:
         for root in (home, Path.home() / ".hermes", Path.home() / ".hermes" / "hermes-agent"):
             bridge = root / "skills" / "productivity" / "google-workspace" / "scripts" / "gws_bridge.py"
             if bridge.exists():
-                return [bridge_python(home), str(bridge)]
-    if shutil.which("gws"):
-        return ["gws"]
+                gdir = find_gws_dir(home)
+                if gdir is None:
+                    raise WatchError("gws CLI 를 찾지 못했습니다(PATH·Hermes 프로필 bin). `npm i -g @googleworkspace/cli` 로 설치하세요.")
+                path = gdir + os.pathsep + os.environ.get("PATH", "")
+                return ["/usr/bin/env", "PATH=" + path, bridge_python(home), str(bridge)]
+    gdir = find_gws_dir(Path(os.environ.get("HERMES_HOME", "").strip() or Path.home() / ".hermes"))
+    if gdir:
+        return [str(Path(gdir) / "gws")]
     raise WatchError("gws CLI 를 찾지 못했습니다. `npm i -g @googleworkspace/cli` 로 설치하세요.")
 
 

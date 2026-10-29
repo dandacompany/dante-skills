@@ -269,5 +269,49 @@ class MailCampaignTest(unittest.TestCase):
         self.assertEqual(rc, 1)
 
 
+class ProfileBinGwsTest(MailCampaignTest):
+    """gws 가 Hermes 프로필 bin 에만 있고 PATH 가 최소일 때도 브리지 경로로 doctor·send 가 돈다."""
+
+    def setUp(self):
+        super().setUp()
+        home = Path(self.tmp.name) / "hermes"
+        (home / "bin").mkdir(parents=True)
+        scripts = home / "skills" / "productivity" / "google-workspace" / "scripts"
+        scripts.mkdir(parents=True)
+        (home / "google_token.json").write_text("{}")
+        gws = home / "bin" / "gws"
+        gws.write_text(f"#!{sys.executable}\n" + FAKE.read_text())
+        gws.chmod(0o755)
+        # 실제 gws_bridge.py 처럼 PATH 에서만 gws 를 찾는다
+        (scripts / "gws_bridge.py").write_text(
+            "import subprocess, sys\nsys.exit(subprocess.run(['gws'] + sys.argv[1:]).returncode)\n")
+        self.env.pop("MAIL_CAMPAIGN_GWS")
+        # 이 장비의 다른 gws 를 찾지 않도록 HOME 을 비운다. Python 3.11+ 은 실제 Hermes venv 를 빌린다.
+        fake_home = Path(self.tmp.name) / "home"
+        (fake_home / ".hermes").mkdir(parents=True)
+        real = Path.home() / ".hermes" / "installs"
+        if real.exists():
+            (fake_home / ".hermes" / "installs").symlink_to(real)
+        self.env.update(HERMES_HOME=str(home), PATH="/usr/bin:/bin", HOME=str(fake_home))
+        self.env.pop("GOOGLE_APPLICATION_CREDENTIALS", None)
+
+    def test_doctor_and_send_with_minimal_path(self):
+        rc, out = self.run_cmd("doctor")
+        self.assertEqual(rc, 0, out)
+        self.assertIn("/usr/bin/env PATH=", out)
+        self.assertIn("me@example.com", out)
+        tok = self.token()
+        rc, out = self.run_cmd("send", str(self.dir), "--confirm", tok)
+        self.assertEqual(rc, 0, out)
+        self.assertIn("=== send 시작", out)
+        self.assertEqual(len([r for r in self.sheet() if r["발송 상태"] == "보냄"]), 3)
+
+    def test_doctor_fails_without_gws(self):
+        (Path(self.env["HERMES_HOME"]) / "bin" / "gws").unlink()
+        rc, out = self.run_cmd("doctor")
+        self.assertNotEqual(rc, 0, out)
+        self.assertIn("gws CLI 를 찾지 못했습니다", out)
+
+
 if __name__ == "__main__":
     unittest.main()

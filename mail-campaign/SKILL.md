@@ -54,11 +54,11 @@ description: Google Sheets(또는 CSV) 명단으로 세그먼트별 개인화 �
 - **발송(7단계)**: 30통이면 10분 넘게 걸린다. 도구 시간 제한에 걸리지 않게 백그라운드로 돌리고 진행을 본다.
 
   ```bash
-  nohup python3 "$MC" send <폴더> --confirm <토큰> > <폴더>/.mail-campaign/send.log 2>&1 &
+  nohup python3 "$MC" send <폴더> --confirm <토큰> >> <폴더>/.mail-campaign/send.log 2>&1 &
   tail -n 5 <폴더>/.mail-campaign/send.log ; python3 "$MC" status <폴더>
   ```
 
-  같은 캠페인을 두 번 동시에 돌리면 잠금 때문에 두 번째가 거부된다. 일일 상한을 넘으면 `plan --limit N` 으로 나눠 보낸다.
+  로그는 `>>` 로 이어 쓴다(다시 실행해도 앞 실행의 오류가 남는다. 실행마다 `=== send 시작 … ===` 줄이 찍힌다). 같은 캠페인을 두 번 동시에 돌리면 잠금 때문에 두 번째가 거부된다. 일일 상한을 넘으면 `plan --limit N` 으로 나눠 보낸다.
 - **오류 상태**: `오류`는 API 가 거절한 것(메일이 나가지 않음)이라 다음 `plan` 에 다시 포함된다. `확인 필요`는 결과를 모르는 실패다. 스크립트가 보낸편지함에서 먼저 찾아보고, 그래도 없을 때만 이 상태를 남긴다. 이 상태는 자동으로 다시 보내지 않는다. 사용자가 보낸편지함을 확인하고 상태 칸을 비운 뒤에만 다시 대상이 된다.
 - **답장(9단계)**: `replies` 가 `.mail-campaign/replies.json` 을 만든다. 각 답장의 snippet 을 읽고 `reply_categories` 중 하나로 분류해 `[{"row": 5, "class": "확인", "note": "2명으로 변경"}]` 형식의 파일을 쓴 뒤 `classify --file` 로 기록한다. `반송`·`수신거부`는 항상 쓸 수 있다. `수신거부`로 분류하면 수신동의 칸이 `거부(날짜)` 가 되어 이후 광고 발송에서 빠진다. 본문 전체가 필요하면 `gws gmail +read --id <messageId>` 로 읽는다.
   - 후속 답장·리마인드는 `gws gmail +reply --message-id <답장 messageId> --body … --draft` 로 **초안까지만** 만든다. 보내기 전에 사용자 승인을 따로 받는다.

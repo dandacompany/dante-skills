@@ -30,7 +30,7 @@ try:
 except ImportError:  # Windows
     fcntl = None
 
-VERSION = "1.0.0"
+VERSION = "1.0.1"
 
 # ── 상태 열 ────────────────────────────────────────────────────────────
 COL_STATUS = "발송 상태"
@@ -243,6 +243,19 @@ def _parse_columns(v: str) -> dict:
 
 
 # ── gws 실행기 ─────────────────────────────────────────────────────────
+def find_gws_dir(home: Path):
+    """gws 실행 파일이 있는 폴더. PATH 에 없어도 Hermes 프로필 bin 등 흔한 설치 위치를 본다.
+    gws_bridge.py 는 PATH 에서만 gws 를 찾으므로, 찾은 폴더를 브리지 실행 PATH 앞에 넣는다."""
+    found = shutil.which("gws")
+    if found:
+        return str(Path(found).parent)
+    for d in (home / "bin", Path.home() / ".hermes" / "bin", Path.home() / ".local" / "bin",
+              Path.home() / ".npm-global" / "bin", Path("/opt/homebrew/bin"), Path("/usr/local/bin")):
+        if (d / "gws").is_file() and os.access(d / "gws", os.X_OK):
+            return str(d)
+    return None
+
+
 def resolve_gws() -> list[str]:
     env = os.environ.get("MAIL_CAMPAIGN_GWS", "").strip()
     if env:
@@ -253,9 +266,14 @@ def resolve_gws() -> list[str]:
         for root in roots:
             bridge = root / "skills" / "productivity" / "google-workspace" / "scripts" / "gws_bridge.py"
             if bridge.exists():
-                return [bridge_python(home), str(bridge)]
-    if shutil.which("gws"):
-        return ["gws"]
+                gdir = find_gws_dir(home)
+                if gdir is None:
+                    raise CampaignError("gws CLI 를 찾지 못했습니다(PATH·Hermes 프로필 bin). `npm i -g @googleworkspace/cli` 로 설치하세요.")
+                path = gdir + os.pathsep + os.environ.get("PATH", "")
+                return ["/usr/bin/env", "PATH=" + path, bridge_python(home), str(bridge)]
+    gdir = find_gws_dir(Path(os.environ.get("HERMES_HOME", "").strip() or Path.home() / ".hermes"))
+    if gdir:
+        return [str(Path(gdir) / "gws")]
     raise CampaignError(
         "gws CLI 를 찾지 못했습니다. `npm i -g @googleworkspace/cli` 로 설치하세요"
         "(Hermes 도 gws_bridge.py 가 내부에서 gws 를 실행하므로 설치가 필요합니다)."
@@ -735,8 +753,12 @@ def cmd_doctor(a):
     print(f"mail-campaign {VERSION}")
     print("gws 실행기:", " ".join(gws.cmd))
     rc, data, err = gws.run(["--version"])
-    print("gws 버전:", (err or "").splitlines()[-1] if rc else "확인됨")
+    if rc != 0:
+        raise CampaignError("gws 를 실행하지 못했습니다: " + ((err or "").splitlines() or ["?"])[-1])
+    print("gws 버전: 확인됨")
     email = gws.profile_email()
+    if not email:
+        raise CampaignError("보내는 계정을 확인하지 못했습니다(Google 연결 확인).")
     print("보내는 계정:", email or "(확인 실패)")
     print(f"최근 24시간 이 계정 발송(이 스킬 기록): {ledger_count_24h(email)}통")
     if a.folder:
@@ -1026,6 +1048,7 @@ def cmd_send(a):
             print("✖ plan 에서 막힌 항목이 있습니다. plan 을 다시 보세요.")
             return 2
         token = plan_token(camp, items)
+        print(f"=== send 시작 {now_kst().isoformat(timespec='seconds')} · 대상 {len(items)}통 · 토큰 {a.confirm} ===", flush=True)
         if a.confirm != token:
             print(f"✖ 승인 토큰이 맞지 않습니다(현재 {token}). 명단이나 문구가 바뀌었을 수 있습니다 — plan 을 다시 보여 주고 승인받으세요.")
             return 2
