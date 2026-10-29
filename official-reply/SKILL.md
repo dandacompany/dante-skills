@@ -15,7 +15,7 @@ description: 받은 공문(.hwp/.hwpx/.pdf)에 대한 회신 묶음을 만드는
 OR=$(ls -d "${HERMES_HOME:-$HOME/.hermes}"/skills/official-reply "${HERMES_HOME:-$HOME/.hermes}"/skills/*/official-reply \
      "$HOME"/.claude/skills/official-reply 2>/dev/null | head -1)/scripts/official_reply.py
 python3 "$OR" --version
-kordoc --version     # 4.24.9 이상. 없으면 npm i -g kordoc
+kordoc --version     # 4.24.9 이상. 없으면 npm i -g kordoc sharp (sharp 는 미리보기 PNG 용)
 ```
 
 - Gmail 초안이 필요하면 gws CLI 와 Google 연결이 있어야 한다(Hermes 는 google-workspace 토큰을 gws_bridge 로 그대로 쓴다. 범위는 gmail.modify 또는 compose). 한컴 오피스와 API 키는 필요 없다.
@@ -77,6 +77,7 @@ python3 "$OR" letter <작업폴더> --sample 회사공문견본.hwpx --md <작�
 ```
 
 - 견본 본문이 한 문단 안에 강제 줄바꿈으로 들어 있으면(일반기안문 서식으로 만든 견본에 흔하다) kordoc patch 가 본문을 고치지 못한다. `sample-md` 가 이를 알아보고 경고하며, `sample-split` 이 줄마다 보통 문단으로 나눈 사본(`회신/<견본>-문단나눔.hwpx`)을 만든다. 원본은 건드리지 않는다.
+- kordoc patch 는 글자 사이에 연속 공백이 든 문단(「1부.  끝.」처럼 두 칸 띄운 줄)을 고치지 못한다. 그래서 스크립트가 원고의 연속 공백을 한 칸으로 줄인 뒤 patch 에 넘기고 그렇게 했다고 알린다. 누름틀(입력 칸)이 든 문단은 그대로 고쳐진다(4.24.9·4.24.21 실측). section XML 을 직접 고치지 않는다.
 - kordoc patch 가 일부 문단을 건너뛰었다고 보고하면(종료 코드 2), 스크립트가 결과를 다시 읽어 고친 원고와 직접 대조한다. **글자까지 같을 때만** 경고와 함께 통과시키고, 다르면 회신 공문을 만들지 않고 멈춘다. 제목만 바뀌고 본문은 옛 내용인 공문이 나가는 것을 막기 위해서다. 멈추면 본문 문단 수를 견본과 같게 맞추거나 A 경로로 바꾼다.
 
 kordoc 의 기관팩(`pack build` → `generate --pack`)은 보고서형 문서용이다. 기안문 견본으로 시험하면 수신·발신명의가 빠지고 번호가 □로 바뀌어서 회신 공문에는 쓰지 않는다(4.24.21 실측).
@@ -84,8 +85,9 @@ kordoc 의 기관팩(`pack build` → `generate --pack`)은 보고서형 문서�
 ### 마무리(7~8단계)
 
 - `finish` 는 `lint --gate`(표기법·윤문·구성) → `validate`(회신 공문과 채운 양식 모두) → `seal`(선택) → `render --format png` 순서로 돈다.
+- PNG 렌더에는 kordoc 옆에 `sharp` 패키지가 있어야 한다(`npm i -g kordoc sharp`). 없으면 스크립트가 SVG 로 렌더한 뒤 `rsvg-convert` 나 macOS `qlmanage` 로 PNG 를 만들고, 둘 다 없으면 SVG 를 미리보기로 남긴다. 미리보기 파일 이름은 `묶음.json` 의 `final.preview` 에 있다.
 - 직인: 투명 배경 PNG 를 사용자에게 받는다. 크기는 `--seal-size`(mm, 기본 15)로 정한다. kordoc 기본값(줄 높이의 1.6배)은 글자 높이 정도로 작게 나온다. 일반기안문 서식에는 「(인)」 글자가 없으므로 `--anchor "<발신명의 문구>"` 를 주면 그 오른쪽에 찍는다. 견본에 「(인)」이 있으면 앵커를 생략한다(문구 위에 겹침). **직인 이미지는 사용자가 준 것만 쓴다. 만들거나 내려받지 않는다.**
-- 미리보기 PNG 를 사용자에게 보여 주고 고칠 점을 묻는다. 고치면 6단계부터 다시 한다.
+- 미리보기를 사용자에게 보여 주고 고칠 점을 묻는다. 고치면 6단계부터 다시 한다.
 
 ### 회신 초안(9단계)
 

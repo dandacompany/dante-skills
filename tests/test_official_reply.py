@@ -125,5 +125,61 @@ class PatchExitTwoTest(unittest.TestCase):
         self.assertFalse((w / "회신" / "회신공문.hwpx").exists())
 
 
+@unittest.skipUnless(shutil.which("kordoc"), "kordoc 없음")
+class SampleAndPreviewTest(unittest.TestCase):
+    """연속 공백이 든 원고도 견본에 반영되고, PNG 렌더가 안 되는 kordoc(sharp 없음)이어도 미리보기가 나온다."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.t = Path(self.tmp.name)
+        letter = {"행정기관명": "예시상사", "수신자": "협력기관장", "제목": "협력 제안", "본문": "본문 첫 문단",
+                  "붙임": "제안서", "발신명의": "예시상사 대표", "주소": "서울 강남구 테헤란로 1"}
+        (self.t / "s.json").write_text(json.dumps(letter, ensure_ascii=False))
+        subprocess.run(["kordoc", "fill", "--template", "gian", "-j", str(self.t / "s.json"), "-o",
+                        str(self.t / "견본.hwpx"), "--silent"], check=True)
+        (self.t / "k.py").write_text(
+            "import subprocess,sys\n"
+            "if sys.argv[1]=='render' and 'png' in sys.argv:\n"
+            "    print('PNG 래스터에는 sharp가 필요합니다 (npm install sharp)', file=sys.stderr); sys.exit(1)\n"
+            "sys.exit(subprocess.run(['kordoc',*sys.argv[1:]]).returncode)\n")
+        self.env = dict(os.environ, OFFICIAL_REPLY_KORDOC=f"{sys.executable} {self.t / 'k.py'}")
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def run_cmd(self, *args):
+        p = subprocess.run([sys.executable, str(SCRIPT), *args], capture_output=True, text=True, env=self.env)
+        return p.returncode, p.stdout + p.stderr
+
+    def test_double_space_and_preview_fallback(self):
+        w = self.t / "job"
+        self.run_cmd("init", str(w), str(self.t / "견본.hwpx"))
+        self.run_cmd("sample-md", str(w), "견본.hwpx")
+        md = w / "회신" / "견본-편집.md"
+        text = md.read_text(encoding="utf-8")
+        text = text.replace("붙임 제안서 1부. 끝.", "붙임 조사표 1부.  끝.").replace("테헤란로 1", "테헤란로  99")
+        md.write_text(text, encoding="utf-8")
+        rc, out = self.run_cmd("letter", str(w), "--sample", "견본.hwpx", "--md", str(md))
+        self.assertEqual(rc, 0, out)
+        self.assertIn("연속 공백", out)
+        got = orp.read_text(w / "회신" / "회신공문.hwpx")
+        self.assertIn("조사표 1부. 끝.", got)
+        self.assertIn("테헤란로 99", got)
+        rc, out = self.run_cmd("finish", str(w))
+        self.assertEqual(rc, 0, out)
+        self.assertIn("SVG 로 렌더", out)
+        m = json.loads((w / "묶음.json").read_text(encoding="utf-8"))
+        preview = w / "회신" / m["final"]["preview"]
+        self.assertTrue(preview.exists())
+        if shutil.which("qlmanage") or shutil.which("rsvg-convert"):
+            self.assertEqual(preview.suffix, ".png")
+        self.assertFalse(list((w / "회신").glob(".preview-square*")))
+
+    def test_square_svg_keeps_whole_page(self):
+        sq = orp.square_svg('<svg viewBox="0 0 595.28 841.88" width="595.28pt" height="841.88pt"><g/></svg>')
+        self.assertIn('viewBox="-123.30 0.00 841.88 841.88"', sq)
+        self.assertIn('width="841.88pt" height="841.88pt"', sq)
+
+
 if __name__ == "__main__":
     unittest.main()

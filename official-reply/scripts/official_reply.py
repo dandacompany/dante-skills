@@ -17,7 +17,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-VERSION = "1.1.0"
+VERSION = "1.1.1"
 DOC_EXT = {".hwp", ".hwpx", ".pdf", ".docx", ".xlsx"}
 
 
@@ -284,6 +284,22 @@ def linebreak_paragraphs(hwpx: Path) -> int:
     return n
 
 
+def collapse_spaces(md: Path, out: Path) -> Path:
+    """글자 사이 연속 공백을 한 칸으로 줄인 원고를 돌려준다.
+
+    kordoc patch 는 연속 공백(「1부.  끝.」의 두 칸 같은)이 든 문단을 「공백 정규화 불안정」으로 건너뛴다.
+    """
+    text = md.read_text(encoding="utf-8")
+    fixed = re.sub(r"(?<=\S)[ \t\u00a0]{2,}(?=\S)", " ", text)
+    if fixed == text:
+        return md
+    n = sum(1 for a, b in zip(text.splitlines(), fixed.splitlines()) if a != b)
+    tmp = out / ".patch-input.md"
+    tmp.write_text(fixed, encoding="utf-8")
+    print(f"⚠ 원고 {n}줄의 연속 공백을 한 칸으로 줄였습니다(kordoc patch 는 연속 공백이 든 문단을 고치지 못합니다).")
+    return tmp
+
+
 def read_text(path: Path) -> str:
     return kordoc([str(path)], check=True).stdout
 
@@ -308,7 +324,8 @@ def cmd_letter(a):
         if not a.md:
             raise ReplyError("--sample 경로는 --md(견본을 읽어 고친 마크다운)가 필요합니다. 먼저 `sample-md`.")
         sample = resolve_in(work, a.sample)
-        p = kordoc(["patch", str(sample), a.md, "-o", str(target)], check=False)
+        md_in = collapse_spaces(Path(a.md), out)
+        p = kordoc(["patch", str(sample), str(md_in), "-o", str(target)], check=False)
         msg = (p.stderr or "") + (p.stdout or "")
         skips = [l for l in msg.splitlines() if "SKIP" in l or "잔차" in l]
         if p.returncode not in (0, 2):
@@ -316,7 +333,7 @@ def cmd_letter(a):
         if p.returncode == 2 or skips:
             # kordoc 의 「완전 일치」 문구를 믿지 않고, 결과를 다시 읽어 고친 원고와 직접 대조한다.
             got = kordoc([str(target), "--keep-layout-tables"], check=False).stdout if target.exists() else ""
-            want = Path(a.md).read_text(encoding="utf-8")
+            want = md_in.read_text(encoding="utf-8")
             if not target.exists() or norm_lines(got) != norm_lines(want):
                 target.unlink(missing_ok=True)
                 raise ReplyError("견본에 반영하지 못한 수정이 있어 회신 공문을 만들지 않았습니다(kordoc patch 종료 코드 "
@@ -410,8 +427,55 @@ def cmd_sample_split(a):
     return 0
 
 
+def render_preview(final: Path, out: Path) -> Path:
+    """미리보기 PNG. kordoc 의 PNG 렌더는 sharp 가 있어야 하므로, 없으면 SVG 로 렌더해 PNG 로 바꾼다."""
+    png = out / "회신공문-미리보기.png"
+    png.unlink(missing_ok=True)
+    r = kordoc(["render", str(final), "--format", "png", "-o", str(png)], check=False)
+    if r.returncode == 0 and png.exists():
+        return png
+    svg = out / "회신공문-미리보기.svg"
+    kordoc(["render", str(final), "--format", "svg", "-o", str(svg)])
+    if not svg.exists():
+        raise ReplyError("미리보기 렌더 결과 파일이 없습니다.")
+    reason = (r.stderr or r.stdout).strip().splitlines()[-1:] or [""]
+    print(f"⚠ PNG 렌더 실패({reason[0][:120]}) → SVG 로 렌더했습니다. `npm i -g sharp` 를 설치하면 다음부터 바로 PNG 가 나옵니다.")
+    if shutil.which("rsvg-convert"):
+        p = subprocess.run(["rsvg-convert", "-w", "1240", "-b", "white", "-o", str(png), str(svg)], capture_output=True)
+        if p.returncode == 0 and png.exists():
+            return png
+    if shutil.which("qlmanage"):
+        # qlmanage 는 정사각형 썸네일을 위에서부터 잘라 A4 아래쪽이 사라진다. 정사각형 캔버스에 가운데로 앉힌 사본을 넘긴다.
+        sq = out / ".preview-square.svg"
+        sq.write_text(square_svg(svg.read_text(encoding="utf-8")), encoding="utf-8")
+        try:
+            subprocess.run(["qlmanage", "-t", "-s", "1800", "-o", str(out), str(sq)], capture_output=True, timeout=60)
+        except subprocess.TimeoutExpired:
+            pass
+        made = out / (sq.name + ".png")
+        sq.unlink(missing_ok=True)
+        if made.exists():
+            made.replace(png)
+            print("  (macOS 미리보기로 SVG 를 PNG 로 바꿨습니다.)")
+            return png
+    return svg
+
+
+def square_svg(text: str) -> str:
+    m = re.search(r'viewBox="([-\d.]+) ([-\d.]+) ([\d.]+) ([\d.]+)"', text)
+    if not m:
+        return text
+    x, y, w, h = map(float, m.groups())
+    side = max(w, h)
+    head = text[:text.find(">", m.end()) + 1]
+    new = re.sub(r'viewBox="[^"]*"', f'viewBox="{x - (side - w) / 2:.2f} {y - (side - h) / 2:.2f} {side:.2f} {side:.2f}"', head, 1)
+    new = re.sub(r'\bwidth="[^"]*"', f'width="{side:.2f}pt"', new, 1)
+    new = re.sub(r'\bheight="[^"]*"', f'height="{side:.2f}pt"', new, 1)
+    return new + text[len(head):]
+
+
 def cmd_finish(a):
-    """검수(lint --gate) → 구조 검증(validate) → 직인(seal, 선택) → 미리보기(render png). 하나라도 실패하면 멈춘다."""
+    """검수(lint --gate) → 구조 검증(validate) → 직인(seal, 선택) → 미리보기(PNG, 안 되면 SVG). 하나라도 실패하면 멈춘다."""
     work = Path(a.work).expanduser().resolve()
     m = load_manifest(work)
     if not m.get("letter"):
@@ -444,8 +508,7 @@ def cmd_finish(a):
         if v.returncode != 0:
             raise ReplyError("직인을 넣은 뒤 구조 검증에 실패했습니다.")
         final = sealed
-    png = out / "회신공문-미리보기.png"
-    kordoc(["render", str(final), "--format", "png", "-o", str(png)])
+    png = render_preview(final, out)
     m["final"] = {"letter": final.name, "preview": png.name,
                   "attachments": [f.name for f in files[1:]], "report": report}
     save_manifest(work, m)
