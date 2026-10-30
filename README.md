@@ -126,6 +126,69 @@ hermes skills install dandacompany/dante-skills/<skill-name>
 skills add dandacompany/dante-skills@dream -g -y --copy -a claude-code
 ```
 
+### 📚 oh-my-wiki
+
+Karpathy "LLM Wiki" 워크플로의 Claude Code 구현. 이 repo의 항목은 **설치 안내용 포인터**이고, 실제 스킬·훅·커맨드는 별도 플러그인 마켓플레이스로 배포됩니다.
+
+```
+/plugin marketplace add dandacompany/oh-my-wiki
+/plugin install oh-my-wiki@oh-my-wiki-marketplace
+```
+
+소스 ingest → 구조화 위키 → 인용 달린 query. 멀티 볼트(sqlite) · autoresearch · 팩트체크/일관성/용어집 · 스웜 병렬 디스패치 포함. 전체 문서: **[github.com/dandacompany/oh-my-wiki](https://github.com/dandacompany/oh-my-wiki)**
+
+### 🛡️ infra-security-audit
+
+자체 호스팅 Linux 서버·VPS의 인프라 보안을 SSH 또는 로컬에서 점검하고 하드닝하는 스킬입니다.
+
+- **audit(기본, 읽기 전용)** — ufw·SSH 설정·fail2ban·노출 포트·자동 업데이트·Cloudflare 프록시·Tailscale을 점검해 하드닝 점수와 우선순위 리포트를 냅니다
+- **plan → apply** — 되돌리기 쉬운 수정만 자동 적용하고, ufw 활성화·sshd 수정·포트 바인딩 같은 위험 변경은 백업과 자가 잠금 방지 확인을 거쳐 사람 승인 후에만 적용합니다
+- 비개발자에게 보고할 때의 말투 지침이 들어 있습니다
+
+```bash
+skills add dandacompany/dante-skills@infra-security-audit -g -y --copy -a claude-code
+hermes skills install dandacompany/dante-skills/infra-security-audit
+```
+
+### 🔐 iris-security-audit
+
+Hermes 에이전트의 4기둥(키·권한·스킬·도커 격리) 보안 감사 체크리스트입니다. 헤르메스 강의 4.3 보안 감사 자동화 실습 준비물입니다.
+
+- 위험 삼각(lethal trifecta)과 Rule of Two로 판정합니다
+- 「잘하는 것 / 조치 필요 / 신규 위험」 3부 보고서를 냅니다. 점검 명령은 모두 읽기 전용이거나 안전한 명령입니다
+- 대화형 세션에서는 발견 이슈를 하나씩 제시하고 처리 방식(자동·승인 후·안내)을 확인받습니다. cron·훅 같은 무인 실행에서는 보고서만 보내고, 이상이 없으면 `[SILENT]`로 조용히 넘어갑니다
+
+```bash
+hermes skills install dandacompany/dante-skills/iris-security-audit --category security
+```
+
+### 🔎 deep-research
+
+병렬 웹 검색으로 인용이 달린 심층 리서치 보고서를 만드는 스킬입니다. 원본은 [samber/cc-skills](https://github.com/samber/cc-skills)(MIT)이며, 출처 표기만 더했습니다.
+
+- 범위 정하기 → 핵심 조사 → 경쟁·지형 분석 → 심화 조사를 단계마다 병렬로 펼쳐 진행하고, 마지막에 종합합니다
+- 출처를 여러 곳에서 교차 검증하고, 주장마다 신뢰도를 추적합니다
+- 리서치 유형 11가지: 시장(TAM/SAM)·도메인·기술·경쟁·제품·학술·인물/기관 실사·재무·법률·트렌드 등
+- Markdown 보고서(핵심 발견·전략 제언·리스크·다음 단계)를 만들고, 원하면 PDF로도 내보냅니다
+
+```bash
+skills add dandacompany/dante-skills@deep-research -g -y --copy -a claude-code
+hermes skills install dandacompany/dante-skills/deep-research
+```
+
+### 🧭 swot-from-signals
+
+브랜드 리서처가 모은 정성·정량 신호로 SWOT(강점·약점·기회·위협) 매트릭스를 도출하는 분석 패턴입니다.
+
+- 입력: 브랜드 리서처 산출물 6종
+- 사분면마다 3개씩 뽑고, 모든 항목에 근거 URL이나 시그널 값을 붙입니다
+- 고정된 JSON 형식으로 출력해 슬라이드 제작자에게 넘깁니다
+
+```bash
+skills add dandacompany/dante-skills@swot-from-signals -g -y --copy -a claude-code
+hermes skills install dandacompany/dante-skills/swot-from-signals
+```
+
 ### 📈 price-positioning
 
 수집된 가격 관측치(브랜드·품목·가격·출처)로부터 **가격 포지셔닝 맵**과 **빈 가격대(화이트스페이스)** 를 결정론적으로 도출하는 분석 패턴. "수집물 → 분석" 계열이라 **수집 도구에 종속되지 않는다** — 웹 수집 MCP·검색 API·사내 시트·수기 입력 무엇으로 모았든 동일하게 동작하고, 어떤 시장·통화에도 쓸 수 있다.
@@ -136,6 +199,141 @@ skills add dandacompany/dante-skills@dream -g -y --copy -a claude-code
 
 ```bash
 skills add dandacompany/dante-skills@price-positioning -g -y --copy -a claude-code
+```
+
+### 📎 report-evidence-citation
+
+모든 산출물에 적용하는 인용·근거 공통 규칙입니다. 리서치 팀의 모든 에이전트가 상속하는 신뢰성 게이트 역할을 합니다.
+
+- 사실과 의견을 나누고, 출처 URL을 끝까지 보존합니다
+- 추측성 어휘와 근거 없는 평가 발언을 막습니다
+- 보고 형식과 검증 체크리스트가 들어 있습니다
+
+```bash
+skills add dandacompany/dante-skills@report-evidence-citation -g -y --copy -a claude-code
+hermes skills install dandacompany/dante-skills/report-evidence-citation
+```
+
+### 📖 brand-research-glossary
+
+B2C 브랜드 시장조사 산출물의 표기·용어를 통일하는 공통 용어 사전입니다.
+
+- 한국 e-커머스·패션 브랜드 표기(무신사·29CM·W컨셉·LF몰 등)
+- Bright Data 제품명(Web Unlocker·SERP API·Datasets·Scraping Browser)과 슬라이드 형식 명칭(Marp·Reveal.js)
+- 금지 표현 목록과 검증 절차가 들어 있습니다
+
+```bash
+skills add dandacompany/dante-skills@brand-research-glossary -g -y --copy -a claude-code
+hermes skills install dandacompany/dante-skills/brand-research-glossary
+```
+
+### 💹 kiwoom-broker
+
+키움증권 공식 CLI(`kwcli`/`kiwoomcli`)를 증권사 어댑터로 쓰는 운영 스킬입니다.
+
+- 국내 ETF·주식 시세, 일봉, 보유 종목을 조회합니다. 모의투자 조회와 `kiwoomcli doctor` 진단도 다룹니다
+- 주문은 두 단계로 나눕니다. 먼저 전송하지 않은 미리보기를 보여 주고, 승인을 받은 뒤에만 집행합니다
+- 직접 REST를 호출하거나 자체 토큰을 발급하는 코드는 만들지 않습니다
+
+```bash
+skills add dandacompany/dante-skills@kiwoom-broker -g -y --copy -a claude-code
+hermes skills install dandacompany/dante-skills/kiwoom-broker
+```
+
+### 🛒 magma-collect
+
+MAGMA 가상 오피스 강의(섹션 7.2)의 커머스 데이터 수집·적재 실습 스킬입니다.
+
+- 무신사·네이버 가격비교·쿠팡에서 남성 패션 키워드의 상품 목록(상품명·브랜드·가격·할인율·평점·리뷰 수)을 Bright Data 도구로 수집합니다
+- 열 순서가 고정된 정규 CSV 스키마로 바꿉니다. 소스마다 없는 필드는 빈 값으로 둡니다(예: 쿠팡은 평점이 없음)
+- 검증 스크립트를 통과하고 사용자 확인을 받은 뒤에만 Supabase에 적재합니다
+- 수집 윤리 규칙이 들어 있습니다
+
+```bash
+skills add dandacompany/dante-skills@magma-collect -g -y --copy -a claude-code
+hermes skills install dandacompany/dante-skills/magma-collect
+```
+
+### 💬 kor-review-taker
+
+국내 이커머스 7곳(쿠팡·네이버 브랜드스토어·11번가·롯데하이마트·SSG·롯데ON·G마켓)의 상품 리뷰를 내려받는 스킬입니다.
+
+- [BrowserSkill](https://github.com/Tencent/BrowserSkill)(`bsk`)로 연 브라우저 탭 안에서, 그 사이트가 쓰는 API를 직접 부르는 스크립트로 빠르게 받습니다
+- 모든 플랫폼에 같은 열을 쓰는 CSV·JSON으로 저장합니다
+- 페이지 사이 간격, 재방문 대기, 차단 감지를 넣었습니다. 캡차나 차단은 우회하지 않습니다
+- 응답 구조가 바뀌면 네트워크를 다시 분석해 수집기를 고치는 자가 복구 절차가 들어 있습니다. 종료 코드마다 다음에 할 일도 정해 두었습니다
+
+```bash
+skills add dandacompany/dante-skills@kor-review-taker -g -y --copy -a claude-code
+hermes skills install dandacompany/dante-skills/kor-review-taker
+```
+
+### 🧪 magma-mart-seed
+
+MAGMA 강의(섹션 7.3) 데이터 정제 실습용 판매·프로모션 더미 데이터 마트 생성기입니다.
+
+- 고객·상품·프로모션·주문·주문상세 CSV 5개, 약 5.5만 행을 만듭니다
+- 중복 고객·결측·날짜 포맷 4종 혼재·금액 표기 혼재·음수 수량·고아 FK·이상치 가격·비정규 코드값 등 현실적인 오염 패턴 12종을 일부러 넣었습니다
+- 시드가 고정돼 있어 누가 언제 실행해도 같은 데이터가 나옵니다
+
+```bash
+skills add dandacompany/dante-skills@magma-mart-seed -g -y --copy -a claude-code
+hermes skills install dandacompany/dante-skills/magma-mart-seed
+```
+
+### 📊 magma-dashboard
+
+MAGMA 강의(섹션 7.4)의 Evidence.dev BI 대시보드 제작 스킬입니다.
+
+- Supabase 정제 뷰를 읽어 Markdown+SQL 페이지로 판매 대시보드를 만들고, 정적 빌드까지 합니다
+- CA 인증서를 포함한 소스 연결 방법과 컴포넌트 8종 사용법을 담았습니다
+- **검산 절차** — 만든 뒤 총계를 원본과 대조합니다. 검산 없이는 완성으로 보고하지 않습니다
+- 실측으로 확인한 함정을 정리해 두었습니다
+
+```bash
+skills add dandacompany/dante-skills@magma-dashboard -g -y --copy -a claude-code
+hermes skills install dandacompany/dante-skills/magma-dashboard
+```
+
+### 🖼️ marp-slide-build
+
+Marp 마크다운으로 임원 보고용 시장조사 슬라이드 12~15장을 빌드해 PDF·HTML로 내보내는 표준 패턴입니다.
+
+- 12장 표준 구성 골격을 씁니다
+- 단테랩스 paper+ink+rust 디자인 가드를 지키지 않으면 빌드를 거부합니다
+- 차트 규칙과 검증 절차가 들어 있습니다
+
+```bash
+skills add dandacompany/dante-skills@marp-slide-build -g -y --copy -a claude-code
+hermes skills install dandacompany/dante-skills/marp-slide-build
+```
+
+### 🌐 nextjs-tremor-report
+
+시장조사 보고서를 정적 PDF 대신 인터랙티브 웹앱으로 만들어 Vercel에 배포하는 스킬입니다. Next.js 15, Tailwind, ECharts를 씁니다.
+
+- 단테랩스 디자인 토큰(paper·ink·rust·slate)을 Tailwind 설정으로 고정합니다
+- 페이지 5개(홈·SWOT·차트·팩트체크·경쟁사)의 표준 구조와 ECharts 차트 4종 패턴을 지킵니다
+- 더미 데이터 규칙을 따르고, 메타 면책 문구는 넣지 않습니다
+- 배포 전에 자가 검증 체크리스트를 돌리고, 트러블슈팅 안내도 담았습니다
+
+```bash
+skills add dandacompany/dante-skills@nextjs-tremor-report -g -y --copy -a claude-code
+hermes skills install dandacompany/dante-skills/nextjs-tremor-report
+```
+
+### ✒️ brand-logo
+
+브랜드 로고 컨셉을 디렉팅하는 디자이너 직무용 스킬입니다. 5단계로 진행합니다: 브리프 → 컨셉 압축 → 프롬프트 → 생성 → 선별·벡터화 인계.
+
+- 이미지 생성 모델은 글자를 잘 못 그립니다. 그래서 심볼·추상·모노그램을 먼저 시도합니다
+- DESIGN.md가 있으면 그 브랜드 토큰(정확한 hex·폰트·비율)을 그대로 씁니다
+- 강한 네거티브 프롬프트와 평가 체크리스트로 결과가 흔들리지 않게 합니다
+- 로고, 워드마크, 앱 아이콘, 파비콘, 채널 아이콘 제작에 씁니다
+
+```bash
+skills add dandacompany/dante-skills@brand-logo -g -y --copy -a claude-code
+hermes skills install dandacompany/dante-skills/brand-logo
 ```
 
 ### ✍️ humanize-korean
@@ -169,16 +367,101 @@ skills add dandacompany/dante-skills@humanize-korean -g -y --copy -a claude-code
 skills add dandacompany/dante-skills@remove-ai-marks -g -y --copy -a claude-code
 ```
 
-### 📚 oh-my-wiki
+### 🕸️ brightdata-guide
 
-Karpathy "LLM Wiki" 워크플로의 Claude Code 구현. 이 repo의 항목은 **설치 안내용 포인터**이고, 실제 스킬·훅·커맨드는 별도 플러그인 마켓플레이스로 배포됩니다.
+Bright Data로 웹 데이터를 수집하는 가이드입니다. MCP와 CLI 두 방식을 함께 다룹니다.
 
+- 불러온 도구를 확인해 MCP가 있으면 MCP를, 없으면 터미널의 `bdata`/`brightdata` CLI를 씁니다
+- 검색·스크랩·구조화 추출 중 무엇을 쓸지 고르는 결정 트리가 있습니다. 구조화 데이터셋을 쓸지 스크래핑할지도 판단해 줍니다
+- 필요한 도구 그룹이 꺼져 있으면 운영자에게 켜 달라고 요청하는 절차가 들어 있습니다
+- Hermes·Codex 등 여러 하네스에서 씁니다
+
+```bash
+skills add dandacompany/dante-skills@brightdata-guide -g -y --copy -a claude-code
+hermes skills install dandacompany/dante-skills/brightdata-guide
 ```
-/plugin marketplace add dandacompany/oh-my-wiki
-/plugin install oh-my-wiki@oh-my-wiki-marketplace
+
+### 📝 tally-api
+
+Tally.so 폼 플랫폼의 REST API와 웹훅을 다루는 스킬입니다.
+
+- 폼 목록·상세 조회, 제출 데이터 조회·내보내기, 분석, 워크스페이스·조직 사용자 관리
+- 웹훅을 만들고, HMAC-SHA256 서명을 검증합니다
+- curl 래퍼(`tally.sh`)와 서명 검증 스크립트를 함께 넣었습니다
+
+```bash
+skills add dandacompany/dante-skills@tally-api -g -y --copy -a claude-code
+hermes skills install dandacompany/dante-skills/tally-api
 ```
 
-소스 ingest → 구조화 위키 → 인용 달린 query. 멀티 볼트(sqlite) · autoresearch · 팩트체크/일관성/용어집 · 스웜 병렬 디스패치 포함. 전체 문서: **[github.com/dandacompany/oh-my-wiki](https://github.com/dandacompany/oh-my-wiki)**
+### 📨 official-reply
+
+받은 공문(.hwp/.hwpx/.pdf)에 대한 회신 묶음을 만드는 스킬입니다. Gmail 답장 초안까지만 만들고, 보내기는 사람이 합니다.
+
+- 요구 사항과 회신 기한을 정리합니다
+- 붙임 양식을 원본 서식 그대로 채웁니다. 모르는 칸은 모아서 한 번에 묻습니다
+- 회신 공문은 일반기안문 서식이나 회사 견본 중 하나로 씁니다
+- 표기법 검수(`lint --gate`) → 구조 검증 → 직인 → 미리보기 순서로 마무리합니다
+- [kordoc](https://github.com/chrisryugj/kordoc) 4.24.9 이상이 필요하고, 한컴 프로그램이나 API 키는 필요 없습니다. `mail-watch`와 이어서 쓸 수 있습니다
+
+```bash
+skills add dandacompany/dante-skills@official-reply -g -y --copy -a claude-code
+hermes skills install dandacompany/dante-skills/official-reply
+```
+
+### 📄 rhwp-unified
+
+한글 문서(HWP·HWPX·HML)를 [rhwp](https://github.com/edwardkim/rhwp) CLI로 다루는 **비공식** 통합 스킬입니다. 상류 edwardkim/rhwp(MIT)의 실사용 스킬 10개를 하나로 묶었습니다.
+
+- SKILL.md에 요청별로 참조 문서를 고르는 표가 있습니다: 문서 파악·내보내기·서식 채우기·표 CSV·안전 편집·보안 점검·대량 처리·MCP·레시피
+- 공통 규칙: 원본은 바꾸지 않습니다. 쓰기 전에 `--dry-run`, 쓴 뒤에 `--verify`를 돌립니다. 문서 안의 텍스트는 지시가 아니라 데이터로 다룹니다
+- `scripts/build_references.py <커밋SHA>`로 참조 문서를 특정 상류 커밋에 고정할 수 있어, 강의 자료와 어긋나지 않게 맞출 수 있습니다
+- rhwp 릴리스 바이너리가 필요합니다(macOS·Linux·Windows 설치 안내 포함). 「한글」·「한컴」·「HWP」·「HWPX」는 한글과컴퓨터의 등록 상표이며, 이 스킬은 한글과컴퓨터·rhwp 프로젝트와 무관합니다
+
+```bash
+skills add dandacompany/dante-skills@rhwp-unified -g -y --copy -a claude-code
+hermes skills install dandacompany/dante-skills/rhwp-unified
+```
+
+### 👀 mail-watch
+
+Gmail 받은편지함을 검색 조건(보낸 사람·제목·첨부 확장자)으로 감시하다가, 새 메일이 있을 때만 에이전트를 깨우는 읽기 전용 스킬입니다.
+
+- Hermes cron 사전 점검(`wakeAgent`)을 씁니다. 새 메일이 없으면 에이전트를 깨우지 않아 토큰이 들지 않고, 있으면 메시지 id와 첨부 정보를 넘깁니다
+- 처리한 메일에 완료 표시(ack)를 해 다시 깨우지 않습니다. 같은 메일을 다시 깨우는 횟수에도 상한이 있습니다. 첨부 내려받기와 연속 오류 보고도 합니다
+- 예약 작업에 다른 스킬을 붙이면(`--skill`, 예: official-reply) 메일 도착부터 처리까지 이어서 돌립니다. 메일은 보내지 않습니다
+
+```bash
+skills add dandacompany/dante-skills@mail-watch -g -y --copy -a claude-code
+hermes skills install dandacompany/dante-skills/mail-watch
+```
+
+### ✉️ mail-campaign
+
+Google Sheets(또는 CSV) 명단으로 세그먼트별 개인화 메일을 gws CLI로 안전하게 보내는 운영 스킬입니다. 추가 API 키 없이 Hermes Google OAuth를 그대로 씁니다.
+
+- 9단계로 진행합니다: 열 매핑 → 행 검증·보류 → 초안 → 내 주소로 테스트 발송 → 승인 토큰 게이트 → 간격·일일 상한을 지키며 발송 → 상태 기록 → 답장 수거·분류
+- 행마다 상태와 messageId를 기록해, 다시 실행해도 같은 사람에게 두 번 보내지 않습니다
+- **정보통신망법 제50조 광고성 판별**: 제목 앞 (광고) 표기, 수신 동의 열, 발신자·수신 거부 안내, 야간(21~08시) 발송 차단
+- Hermes 칸반 모드(선택)를 지원하고, 운영하며 배운 규칙을 쌓는 절이 있습니다. 참고한 프로젝트: Draft Machine(MIT-0)·outreach-composer(Apache-2.0)·consent-registry(Apache-2.0)
+
+```bash
+skills add dandacompany/dante-skills@mail-campaign -g -y --copy -a claude-code
+hermes skills install dandacompany/dante-skills/mail-campaign
+```
+
+### 🎵 acestep
+
+ACE-Step V1.5 API로 음악을 생성·편집하는 스킬입니다. 원본은 [ace-step/ACE-Step-1.5](https://github.com/ace-step/ACE-Step-1.5)(MIT)입니다.
+
+- text-to-music, 가사 생성, 오디오 이어 붙이기(continuation), 커버·리페인팅
+- 공식 클라우드(`api.acemusic.ai`)와 로컬·사용자 지정 API를 모두 지원합니다
+- Hermes 보안 스캐너 오탐을 피하려고 변수명 등만 고친 포크입니다. 동작은 원본과 같습니다
+
+```bash
+skills add dandacompany/dante-skills@acestep -g -y --copy -a claude-code
+hermes skills install dandacompany/dante-skills/acestep
+```
 
 ### 🎚️ gpt-model-effort-advisor
 
@@ -195,6 +478,43 @@ skills add dandacompany/dante-skills@gpt-model-effort-advisor -g -y --copy -a co
 ```
 
 설치 후 codex 세션에서 "이 작업 어떤 모델로 할까?"처럼 물어보거나 작업을 시키면 자동으로 추천한다. 레지스트리는 빈 상태로 시작해 사용자의 실제 결과로 채워진다.
+
+### 🖥️ danteterm
+
+DanteTerm(Wave Terminal 포크)을 `dsh` 명령으로 조종하는 스킬입니다.
+
+- 탭과 블록을 만들고 배치합니다. 다른 패널에 키 입력을 보내고 스크롤백을 회수합니다
+- `claude`/`codex`/`hermes`를 별도 블록에 띄워 작업을 맡기고 결과를 거둡니다(`danteterm_delegate.py`)
+- 결과를 스크롤백 대신 preview/web/editor 블록으로 보여 줍니다
+- 블록 지정 실수를 막는 규칙(번호가 아니라 uuid로 지정)이 있고, 원격 연결·파일·변수·시크릿 관리도 다룹니다
+
+```bash
+skills add dandacompany/dante-skills@danteterm -g -y --copy -a claude-code
+hermes skills install dandacompany/dante-skills/danteterm
+```
+
+### 🎧 magma-support
+
+MAGMA 고객지원 1차 응대 지식(샘플)입니다. 헤르메스 강의 4.1 웹훅 실습 준비물입니다.
+
+- 제품·사이즈·재입고·교환/환불·배송 정책을 참고해 정중한 1차 답변 초안을 씁니다
+- 확실하지 않은 정보는 추측하지 않고 「담당자 확인 필요」로 표시합니다
+- gws로 Gmail 초안을 저장하는 방법이 들어 있습니다
+
+```bash
+hermes skills install dandacompany/dante-skills/magma-support
+```
+
+### 🗣️ persona-interview
+
+소크라테스식 문답으로 짧게 인터뷰해 Hermes `SOUL.md` 초안을 만드는 스킬입니다. 헤르메스 강의 2.2 페르소나 만들기에서 선택해 쓰는 도구입니다.
+
+- 5~7개만 묻고 Hermes 공식 4섹션(Identity·Style·Avoid·Defaults) 구조로 정리합니다
+- 빈손에서 페르소나를 시작할 때나, 기존 SOUL.md를 내 말투로 바꿀 때 씁니다
+
+```bash
+hermes skills install dandacompany/dante-skills/persona-interview
+```
 
 ---
 
