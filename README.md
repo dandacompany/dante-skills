@@ -77,7 +77,7 @@ hermes skills install dandacompany/dante-skills/<skill-name>
 | --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
 | [brightdata-guide](./brightdata-guide/) | Bright Data 웹 수집 가이드(MCP + CLI 통합). MCP 도구가 있으면 MCP를, 없으면 터미널의 `bdata`/`brightdata` CLI로 검색·스크랩·구조화 추출. Hermes·Codex 등 범용. | `skills add dandacompany/dante-skills@brightdata-guide`<br>`hermes skills install dandacompany/dante-skills/brightdata-guide` |
 | [tally-api](./tally-api/)               | Tally.so 폼 플랫폼 REST API·웹훅 연동. 폼·제출·분석·워크스페이스 조회 및 웹훅 생성/서명검증. curl CLI 래퍼(`tally.sh`) + HMAC-SHA256 서명 검증 스크립트 동봉.  | `skills add dandacompany/dante-skills@tally-api`<br>`hermes skills install dandacompany/dante-skills/tally-api`               |
-| [official-reply](./official-reply/) | 받은 공문(.hwp/.hwpx/.pdf) 회신 묶음 만들기. 요구 사항·기한 정리 → 붙임 양식을 원본 서식 그대로 채우기(모르는 칸은 모아서 한 번에 묻기, `--require-unique`) → 회신 공문(일반기안문 서식 또는 회사 견본) → 표기법 검수(`lint --gate`)·구조 검증·직인·미리보기 PNG → Gmail 회신 초안까지만(보내기는 사람). [kordoc](https://github.com/chrisryugj/kordoc) 4.24.9+ 기반, 한컴·키 불필요. | `skills add dandacompany/dante-skills@official-reply`<br>`hermes skills install dandacompany/dante-skills/official-reply` |
+| [official-reply](./official-reply/) | 받은 공문(.hwp/.hwpx) 회신 묶음 만들기([rhwp](https://github.com/edwardkim/rhwp) 기반). 요구 사항·기한 정리 → 붙임 양식(누름틀 또는 표 칸)을 원본 서식 그대로 채우기(모르는 칸은 모아서 한 번에 묻기) → 회사 견본으로 회신 공문(원자 실행 + 원고 대조) → 붙임 「끝.」 점검·직인·메타데이터 제거·미리보기 PNG → Gmail 회신 초안까지만(보내기는 사람). 결과는 HWP 5.x 기본. rhwp 바이너리만 필요, 한컴·키 불필요. | `skills add dandacompany/dante-skills@official-reply`<br>`hermes skills install dandacompany/dante-skills/official-reply` |
 | [rhwp-unified](./rhwp-unified/) | 한글 문서(HWP·HWPX·HML)를 [rhwp](https://github.com/edwardkim/rhwp) CLI로 다루는 통합 스킬. 문서 파악·요약·검색, PDF·PNG·SVG·Markdown·HWPX 내보내기, 누름틀 서식 채우기·메일머지, 표 CSV 왕복, 원본 보존 편집, 숨은 글·주입·개인정보 점검, 폴더 대량 처리, MCP 연결. 상류 edwardkim/rhwp(MIT)의 실사용 스킬 10개를 묶은 **비공식** 통합본(`references/` 는 상류 본문, `scripts/build_references.py <SHA>` 로 특정 커밋에 고정). rhwp 릴리스 바이너리 필요(macOS·Linux·Windows), 한컴·키 불필요. 「한글」·「한컴」·「HWP」·「HWPX」는 한글과컴퓨터의 등록 상표이며 이 스킬은 한글과컴퓨터·rhwp 프로젝트와 무관합니다. | `skills add dandacompany/dante-skills@rhwp-unified`<br>`hermes skills install dandacompany/dante-skills/rhwp-unified` |
 | [mail-watch](./mail-watch/) | Gmail 받은편지함을 검색 조건(보낸 사람·제목·첨부 확장자)으로 감시해 새 메일이 있을 때만 에이전트를 깨우는 읽기 전용 스킬. Hermes cron 사전 점검(`wakeAgent`)으로 새 메일이 없으면 토큰 0, 있으면 메시지 id·첨부 정보를 넘김. 처리 완료 표시(ack)·재깨우기 상한·첨부 내려받기·연속 오류 보고. 예약에 다른 스킬을 붙여(`--skill`) 자동 처리. | `skills add dandacompany/dante-skills@mail-watch`<br>`hermes skills install dandacompany/dante-skills/mail-watch` |
 | [mail-campaign](./mail-campaign/) | Google Sheets(또는 CSV) 명단 → 세그먼트별 개인화 메일을 gws CLI로 발송. 행 검증·보류, 초안, 내 주소 테스트, 승인 토큰 게이트, 간격·일일 상한 발송, 행별 상태·messageId 기록(재실행 시 중복 방지), 답장 수거·분류, **정보통신망법 제50조 광고성 판별**((광고)·수신동의·야간 차단). Hermes Google OAuth 재사용 — 추가 키 0개. 참고: Draft Machine(MIT-0)·outreach-composer(Apache-2.0)·consent-registry(Apache-2.0). | `skills add dandacompany/dante-skills@mail-campaign`<br>`hermes skills install dandacompany/dante-skills/mail-campaign` |
@@ -396,13 +396,13 @@ hermes skills install dandacompany/dante-skills/tally-api
 
 ### 📨 official-reply
 
-받은 공문(.hwp/.hwpx/.pdf)에 대한 회신 묶음을 만드는 스킬입니다. Gmail 답장 초안까지만 만들고, 보내기는 사람이 합니다.
+받은 공문(.hwp/.hwpx)에 대한 회신 묶음을 [rhwp](https://github.com/edwardkim/rhwp) CLI로 만드는 스킬입니다. Gmail 답장 초안까지만 만들고, 보내기는 사람이 합니다. hwp 일반 작업은 `rhwp-unified`, 공문 회신 묶음은 이 스킬이 맡습니다.
 
-- 요구 사항과 회신 기한을 정리합니다
-- 붙임 양식을 원본 서식 그대로 채웁니다. 모르는 칸은 모아서 한 번에 묻습니다
-- 회신 공문은 일반기안문 서식이나 회사 견본 중 하나로 씁니다
-- 표기법 검수(`lint --gate`) → 구조 검증 → 직인 → 미리보기 순서로 마무리합니다
-- [kordoc](https://github.com/chrisryugj/kordoc) 4.24.9 이상이 필요하고, 한컴 프로그램이나 API 키는 필요 없습니다. `mail-watch`와 이어서 쓸 수 있습니다
+- 받은 문서를 읽고(주입 신호 점검·날짜 추출 포함) 요구 사항과 회신 기한을 정리합니다
+- 붙임 양식을 원본 서식 그대로 채웁니다. 누름틀이 없으면 표의 「라벨 옆 빈 칸」을 찾습니다. 모르는 칸은 모아서 한 번에 묻습니다
+- 회사 공문 견본의 누름틀과 본문 문단을 바꿔 회신 공문을 씁니다. `rhwp run` 원자 실행 뒤 결과를 다시 읽어 원고와 대조하고, 안 쓴 빈 칸의 빨간 안내문을 지웁니다
+- 붙임 「끝.」 점검 → 직인(「(인)」 자리) → 메타데이터 제거 → 미리보기 PNG 순서로 마무리합니다. 결과는 기본 HWP 5.x(기관이 요구하면 HWPX)
+- rhwp 릴리스 바이너리만 있으면 됩니다(Node·한컴 프로그램·API 키 불필요). `mail-watch`와 이어서 쓸 수 있습니다
 
 ```bash
 skills add dandacompany/dante-skills@official-reply -g -y --copy -a claude-code
