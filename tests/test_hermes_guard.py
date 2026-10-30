@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parent.parent
 AGENT = Path.home() / ".hermes" / "hermes-agent"
 PYTHONS = sorted((Path.home() / ".hermes").glob("installs/*/environments/*/venv/bin/python"),
                  key=lambda p: p.stat().st_mtime, reverse=True)
-SKILLS = ["mail-campaign", "mail-watch", "official-reply"]
+SKILLS = ["mail-campaign", "mail-watch", "official-reply", "rhwp-unified"]
 
 CHECK = """
 import sys
